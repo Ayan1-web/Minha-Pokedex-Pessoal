@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar com Google</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <main class="cartao">
+    <h1>Bem-vindo</h1>
+
+    <section id="tela-login" hidden>
+      <p>Entre com a sua conta Google para continuar.</p>
+      <div id="botao-google"></div>
+      <p id="erro" class="erro" role="alert" hidden></p>
+    </section>
+
+    <section id="tela-perfil" hidden>
+      <img id="foto" alt="" width="72" height="72" referrerpolicy="no-referrer">
+      <h2 id="nome"></h2>
+      <p id="email"></p>
+      <button id="sair" type="button">Sair</button>
+    </section>
+
+    <p id="carregando">Carregando…</p>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
