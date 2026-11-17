@@ -1,44 +1,66 @@
-# Pokédex Pessoal com Login Google — Atualização (passo a passo leigo)
+# Pokédex Pessoal v3 — Atualização passo a passo (para leigos)
 
-Você já tem tudo configurado (Vercel, Google Cloud e variáveis). Agora vamos só **trocar os arquivos** do repositório `guia-login-google` por estes novos.
-Não precisa mexer no Google Cloud nem nas variáveis da Vercel.
+Você já tem Vercel, Google Cloud e variáveis configurados. **Nada disso muda.**
+Só vamos trocar os arquivos do repositório `guia-login-google` e esperar a Vercel publicar.
 
-## O que mudou
-- Depois do login aparece a **Pokédex** (10 Pokémon), com dashboard colorido, busca, filtro por tipo, favoritos e tela de detalhes.
-- Os dados da Pokédex vêm de uma **rota protegida** (`/api/pokemon`): sem login válido, o servidor responde 401 e não entrega nada.
-- Os favoritos ficam guardados no navegador, separados por usuário Google (`sub`).
+## O que há de novo
+- **Equipes:** monte equipes de até 6 Pokémon (pode repetir o mesmo Pokémon), dê um nome e salve.
+  Você pode ter até 30 equipes salvas, editar, duplicar e excluir.
+- **Pokédex completa:** todos os Pokémon da PokéAPI, com busca, filtro por tipo, favoritos e paginação.
+- **Detalhes:** tipos, habilidades, atributos, linha evolutiva, golpes e descrição.
+- **Explorador da API:** consulta os 52 endpoints da lista que você enviou.
+- **Segurança:** a PokéAPI só é consultada por um servidor protegido (`/api/pokeapi`) que exige o login Google.
 
-## Passo 1: Preparar os arquivos (em qualquer computador)
-1. Baixe e extraia o **guia-login-google.zip**.
-2. Abra a pasta extraída. Dentro dela você verá: `api`, `lib`, `public`, `package.json`, `vercel.json`.
+## PASSO 1 — Preparar os arquivos
+1. Baixe o **guia-login-google.zip** e extraia (botão direito → Extrair tudo).
+2. Abra a pasta extraída. Dentro dela estão: `api`, `lib`, `public`, `package.json`, `vercel.json`.
 
-## Passo 2: Enviar para o GitHub
-1. Entre em **github.com** e abra o repositório **guia-login-google**.
+## PASSO 2 — Enviar ao GitHub (substituindo os antigos)
+1. Abra o repositório **guia-login-google** no GitHub.
 2. Clique em **Add file → Upload files**.
-3. Selecione **tudo que está dentro da pasta extraída** (as pastas `api`, `lib`, `public` e os arquivos `package.json` e `vercel.json`) e arraste para a janela do GitHub.
-4. Arquivos com o mesmo nome são **substituídos**. Isso é o esperado.
-5. Clique em **Commit changes**.
+3. Selecione **tudo que está DENTRO da pasta extraída** (`api`, `lib`, `public`, `package.json`, `vercel.json`) e arraste para a janela.
+   - Não arraste a pasta externa, só o conteúdo dela.
+4. Clique em **Commit changes**.
+   - Arquivos com o mesmo nome são substituídos. Arquivos novos (`api/pokeapi.js`, `lib/endpoints.js`) são adicionados.
 
-## Passo 3: Remover o arquivo de teste (se você criou)
-Se criou o `public/teste.html` durante o diagnóstico: no GitHub abra `public` → `teste.html` → ícone da lixeira → **Commit changes**.
+## PASSO 3 — Conferir que os arquivos chegaram
+No GitHub confira:
+- `api/pokeapi.js` existe;
+- `lib/endpoints.js` existe;
+- `public/app.js` contém a palavra `CATALOGO`.
+Se algum não existir, crie com **Add file → Create new file** colando o conteúdo do arquivo do zip (o nome deve incluir a pasta, ex.: `api/pokeapi.js`).
 
-## Passo 4: Esperar a Vercel publicar
-A Vercel publica sozinha após cada commit. Em **Deployments**, espere o status ficar **Ready** (1 a 2 minutos).
+## PASSO 4 — Limpeza (opcional)
+Os arquivos antigos `api/pokemon.js` e `lib/pokemon.js` não são mais usados. Pode apagá-los:
+abra o arquivo → ícone da lixeira → **Commit changes**. Se não apagar, não atrapalha.
+Se existir `public/teste.html`, apague também.
 
-## Passo 5: Testar
-1. Abra `https://guia-login-google-qi82.vercel.app` (de preferência em janela anônima).
-2. Entre com o Google. Você deve ver a **Pokédex** colorida com 10 cartões.
-3. Teste: busca, filtro de tipo, ★ favorito, clique no cartão (detalhes) e **Sair**.
-4. Prova da proteção: depois de sair, abra `https://guia-login-google-qi82.vercel.app/api/pokemon`. Deve aparecer uma mensagem de erro pedindo login.
+## PASSO 5 — Esperar a Vercel
+1. Na Vercel, projeto **qi82**, aba **Deployments**.
+2. Espere o deploy mais recente ficar **Ready** (1 a 2 minutos).
+
+## PASSO 6 — Testar
+1. Abra `https://guia-login-google-qi82.vercel.app` em janela anônima (Ctrl + Shift + N).
+2. Entre com o Google. Deve aparecer o dashboard colorido com 4 cartões no topo.
+3. **Teste de equipe:**
+   - No campo "Buscar Pokémon para a equipe", digite `pikachu` e clique no resultado.
+   - Digite `charizard` e clique. Adicione mais 4 (pode repetir).
+   - Escreva o nome (ex.: Equipe 1) e clique em **Salvar equipe**.
+   - Ela aparece em "Equipes salvas". Monte outra para ter mais de uma.
+4. **Teste da Pokédex:** use busca, filtro de tipo, ★ e clique em um cartão para ver os detalhes.
+5. **Teste do Explorador:** aba "Explorador da API" → escolha "Pokémon" → digite `pikachu` → Consultar.
+6. **Prova de proteção:** clique em **Sair** e abra `.../api/pokeapi?caminho=pokemon/25`. Deve dar erro pedindo login.
 
 ## Se algo der errado
 | Sintoma | Solução |
 |---|---|
-| Continua a tela antiga | Dê **Ctrl + Shift + R** e confira se o deploy está **Ready**. |
-| 404 na página | Confira se `vercel.json` está na raiz do repositório e a pasta `public` também. |
-| Cartões sem imagem (aparece ❓) | As imagens vêm do site raw.githubusercontent.com. Confira a internet/bloqueadores. A Pokédex funciona mesmo sem imagem. |
-| Login não funciona em outra máquina | Teste em janela anônima, desative extensões de bloqueio e confirme que seu e-mail está em **Usuários de teste** no Google Cloud. |
-| Favoritos "sumiram" | Ficam salvos por navegador. Em outro computador ou navegador começam vazios. |
+| Continua a tela antiga | **Ctrl + Shift + R**; confirme deploy **Ready**. |
+| "Carregando Pokédex…" nunca termina / erro vermelho | Confirme `api/pokeapi.js` e `lib/endpoints.js` no GitHub. Abra `.../api/pokeapi?caminho=pokemon/25` já logado: deve mostrar dados. |
+| "A PokéAPI não respondeu a tempo" | A PokéAPI pode estar lenta. Tente de novo em instantes. |
+| Alguns endpoints do Explorador mostram "Não encontrado" | Alguns nomes da lista podem não existir na PokéAPI atual (ex.: item-price, currency). Não é erro do projeto. |
+| Imagens aparecem como ❓ | As imagens vêm de raw.githubusercontent.com; verifique a internet ou bloqueadores. |
+| Equipes sumiram | Ficam salvas **neste navegador**, por conta Google. Em outro computador use **Exportar equipes** (copia um texto) e **Importar equipes** (cola o texto). |
 
-## Próximos passos possíveis
-Guardar favoritos num banco de dados (para acompanharem o usuário em qualquer máquina), adicionar mais Pokémon em `lib/pokemon.js` e criar equipes.
+## Limites desta versão
+- Equipes e favoritos ficam no navegador (localStorage). Para sincronizar entre máquinas automaticamente seria preciso um banco de dados (próximo passo possível).
+- Lista só espécies base (formas alternativas ficam de fora); equipes têm até 6 Pokémon.
