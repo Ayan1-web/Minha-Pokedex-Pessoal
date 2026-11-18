@@ -174,3 +174,36 @@ input[type="text"], input[type="search"], select {
   position: fixed; left: 50%; bottom: 1.2rem; transform: translateX(-50%); z-index: 50; max-width: 90vw;
   background: var(--tinta); color: #fff; padding: .7rem 1.2rem; border-radius: 999px; font-weight: 700; border: 3px solid var(--amarelo);
 }
+
+/* ===== v4 ===== */
+.stat.roxo { background: var(--roxo); }
+.layout { display: grid; grid-template-columns: 110px minmax(0, 72rem) 110px; gap: 1rem; justify-content: center; padding: 0 1rem; }
+.layout .conteudo { padding: 1.25rem 0; width: 100%; }
+.lat { position: sticky; top: 1rem; align-self: start; display: flex; flex-direction: column; gap: 1.6rem; padding-top: 1.5rem; }
+.lat svg { width: 100%; height: auto; filter: drop-shadow(4px 5px 0 rgba(30,27,75,.25)); animation: flutua 4s ease-in-out infinite; }
+.lat svg:nth-child(2n) { animation-delay: -1.3s; } .lat svg:nth-child(3n) { animation-delay: -2.6s; }
+@keyframes flutua { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-12px) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .lat svg { animation: none; } }
+@media (max-width: 1180px) { .layout { grid-template-columns: minmax(0, 1fr); } .lat { display: none; } }
+.grade.pequena { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .8rem; }
+.cartao-i { text-align: center; padding: .6rem; border: 3px solid var(--tinta); border-radius: 16px; background: #fff; cursor: pointer; box-shadow: 4px 4px 0 var(--cor, var(--azul)); font-size: .85rem; font-weight: 700; word-break: break-word; }
+.cartao-i:hover { transform: translateY(-3px); }
+.cartao-i img { width: 48px; height: 48px; image-rendering: pixelated; display: block; margin: 0 auto .3rem; }
+.guia ul { padding-left: 1.2rem; line-height: 1.55; }
+.guia li { margin-bottom: .35rem; }
+.guia h2:not(:first-child) { margin-top: 1.6rem; }
+.tab { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.tab th, .tab td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid #e5e7eb; }
+.tab tr[data-golpe] { cursor: pointer; } .tab tr[data-golpe]:hover { background: #fef3c7; }
+.tab-wrap { max-height: 16rem; overflow: auto; border: 2px solid var(--tinta); border-radius: 12px; }
+.ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .5rem; margin: .5rem 0 1rem; }
+.ficha div { border: 2px solid var(--tinta); border-radius: 12px; padding: .4rem .6rem; background: #fefce8; }
+.ficha small { display: block; color: var(--suave); }
+.det-corpo ul { margin: .2rem 0 .8rem; padding-left: 1.1rem; color: var(--tinta); }
+.det-corpo li { margin-bottom: .25rem; }
+.grp { margin: .3rem 0; } .grp small { margin: 0 .5rem 0 .15rem; font-weight: 700; }
+.voltar { margin-bottom: .6rem; }
+.det-corpo a { color: var(--azul); font-weight: 700; }
+.det-corpo select { min-width: 0; padding: .4rem .6rem; }
+.det-corpo .linha { margin: .4rem 0; }
+.nota { font-size: .8rem; color: var(--suave); }
