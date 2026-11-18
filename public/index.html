@@ -32,78 +32,173 @@
       </div>
     </header>
 
-    <main class="conteudo">
-      <section class="resumo" aria-label="Resumo">
-        <div class="stat azul"><span id="r-eq">0</span><small>Equipes salvas</small></div>
-        <div class="stat rosa"><span id="r-mem">0</span><small>Pokémon em equipes</small></div>
-        <div class="stat amarelo"><span id="r-fav">0</span><small>Favoritos</small></div>
-        <div class="stat verde"><span id="r-total">0</span><small>Pokémon na Pokédex</small></div>
-      </section>
+    <div class="layout">
+      <aside class="lat" id="lat-esq" aria-hidden="true"></aside>
 
-      <nav class="abas" aria-label="Seções">
-        <button type="button" class="chip" data-aba="pokedex" aria-pressed="true">Pokédex e Equipes</button>
-        <button type="button" class="chip" data-aba="explorador" aria-pressed="false">Explorador da API</button>
-      </nav>
-
-      <!-- ABA 1: EQUIPES + POKÉDEX -->
-      <div id="aba-pokedex">
-        <section class="painel" aria-label="Montar equipe">
-          <h2>Montar equipe</h2>
-          <div class="linha">
-            <input id="eq-nome" type="text" maxlength="30" placeholder="Nome da equipe (ex.: Equipe 1)" aria-label="Nome da equipe">
-            <button id="eq-salvar" type="button" class="chip destaque">Salvar equipe</button>
-            <button id="eq-nova" type="button" class="chip">Nova equipe</button>
-          </div>
-          <div class="busca-eq">
-            <input id="eq-busca" type="search" autocomplete="off" placeholder="Buscar Pokémon para a equipe (ex.: pikachu, charizard…)" aria-label="Buscar Pokémon para a equipe">
-            <div id="eq-sugestoes" class="sugestoes" hidden></div>
-          </div>
-          <div id="eq-slots" class="slots" aria-label="Slots da equipe"></div>
-          <p id="eq-msg" class="msg" role="status"></p>
-
-          <h3>Equipes salvas <small id="eq-qtd"></small></h3>
-          <div id="eq-lista" class="eq-lista"></div>
-          <div class="linha">
-            <button id="eq-exportar" type="button" class="chip">Exportar equipes</button>
-            <button id="eq-importar" type="button" class="chip">Importar equipes</button>
-          </div>
+      <main class="conteudo">
+        <section class="resumo" aria-label="Resumo">
+          <div class="stat azul"><span id="r-eq">0</span><small>Equipes salvas</small></div>
+          <div class="stat rosa"><span id="r-mem">0</span><small>Pokémon em equipes</small></div>
+          <div class="stat amarelo"><span id="r-fav">0</span><small>Favoritos</small></div>
+          <div class="stat verde"><span id="r-total">0</span><small>Espécies na Pokédex</small></div>
+          <div class="stat roxo"><span id="r-itens">0</span><small>Itens catalogados</small></div>
         </section>
 
-        <section class="filtros" aria-label="Filtros">
-          <input id="busca" type="search" placeholder="Buscar na Pokédex por nome ou número…" aria-label="Buscar Pokémon">
-          <select id="filtro-tipo" aria-label="Filtrar por tipo"><option value="">Todos os tipos</option></select>
-          <button id="so-fav" type="button" class="chip" aria-pressed="false">★ Só favoritos</button>
-        </section>
-
-        <section id="grade" class="grade" aria-live="polite"></section>
-        <p id="vazio" class="vazio" hidden>Nenhum Pokémon encontrado.</p>
-        <nav class="paginas" aria-label="Páginas">
-          <button id="pag-ant" type="button" class="chip">← Anterior</button>
-          <span id="pag-info"></span>
-          <button id="pag-prox" type="button" class="chip">Próxima →</button>
+        <nav class="abas" aria-label="Seções">
+          <button type="button" class="chip" data-aba="pokedex" aria-pressed="true">Pokédex e Equipes</button>
+          <button type="button" class="chip" data-aba="itens" aria-pressed="false">Itens</button>
+          <button type="button" class="chip" data-aba="golpes" aria-pressed="false">Golpes</button>
+          <button type="button" class="chip" data-aba="guia" aria-pressed="false">Guia e Mecânicas</button>
+          <button type="button" class="chip" data-aba="explorador" aria-pressed="false">Explorador da API</button>
         </nav>
-      </div>
 
-      <!-- ABA 2: EXPLORADOR -->
-      <div id="aba-explorador" hidden>
-        <section class="painel" aria-label="Explorador da PokéAPI">
-          <h2>Explorador da PokéAPI</h2>
-          <p class="dica">Escolha um dos 52 endpoints. Deixe o campo vazio para ver a lista, ou digite um número/nome. Clique nos links do resultado para navegar.</p>
-          <div class="linha">
-            <select id="ex-endpoint" aria-label="Endpoint"></select>
-            <input id="ex-param" type="text" aria-label="Número ou nome">
-            <button id="ex-ir" type="button" class="chip destaque">Consultar</button>
-          </div>
-          <p id="ex-url" class="url"></p>
-          <div id="ex-resultado" class="resultado"></div>
-        </section>
-      </div>
-    </main>
+        <!-- ABA: POKÉDEX + EQUIPES -->
+        <div id="aba-pokedex">
+          <section class="painel" aria-label="Montar equipe">
+            <h2>Montar equipe</h2>
+            <div class="linha">
+              <input id="eq-nome" type="text" maxlength="30" placeholder="Nome da equipe (ex.: Equipe 1)" aria-label="Nome da equipe">
+              <button id="eq-salvar" type="button" class="chip destaque">Salvar equipe</button>
+              <button id="eq-nova" type="button" class="chip">Nova equipe</button>
+            </div>
+            <div class="busca-eq">
+              <input id="eq-busca" type="search" autocomplete="off" placeholder="Buscar Pokémon para a equipe (ex.: pikachu, charizard-mega-x, venusaur-gmax…)" aria-label="Buscar Pokémon para a equipe">
+              <div id="eq-sugestoes" class="sugestoes" hidden></div>
+            </div>
+            <div id="eq-slots" class="slots" aria-label="Slots da equipe"></div>
+            <p id="eq-msg" class="msg" role="status"></p>
+            <h3>Equipes salvas <small id="eq-qtd"></small></h3>
+            <div id="eq-lista" class="eq-lista"></div>
+            <div class="linha">
+              <button id="eq-exportar" type="button" class="chip">Exportar equipes</button>
+              <button id="eq-importar" type="button" class="chip">Importar equipes</button>
+            </div>
+          </section>
+
+          <section class="filtros" aria-label="Filtros">
+            <input id="busca" type="search" placeholder="Buscar na Pokédex por nome ou número…" aria-label="Buscar Pokémon">
+            <select id="filtro-forma" aria-label="Variações">
+              <option value="base">Espécies base</option>
+              <option value="mega">Mega Evoluções</option>
+              <option value="gmax">Gigantamax</option>
+              <option value="regional">Formas regionais</option>
+              <option value="todas">Todas as formas</option>
+            </select>
+            <select id="filtro-tipo" aria-label="Filtrar por tipo"><option value="">Todos os tipos</option></select>
+            <button id="so-fav" type="button" class="chip" aria-pressed="false">★ Só favoritos</button>
+          </section>
+          <section id="grade" class="grade" aria-live="polite"></section>
+          <p id="vazio" class="vazio" hidden>Nenhum Pokémon encontrado.</p>
+          <nav class="paginas" aria-label="Páginas">
+            <button id="pag-ant" type="button" class="chip">← Anterior</button>
+            <span id="pag-info"></span>
+            <button id="pag-prox" type="button" class="chip">Próxima →</button>
+          </nav>
+        </div>
+
+        <!-- ABA: ITENS -->
+        <div id="aba-itens" hidden>
+          <section class="painel">
+            <h2>Itens</h2>
+            <p class="dica">Todos os itens existentes na PokéAPI (jogos principais). Clique em um item para ver efeito, descrição, preço, atributos e quem o carrega.</p>
+            <div class="filtros">
+              <input id="busca-i" type="search" placeholder="Buscar item por nome (em inglês)…" aria-label="Buscar item">
+              <select id="filtro-cat-item" aria-label="Categoria"><option value="">Todas as categorias</option></select>
+            </div>
+          </section>
+          <section id="grade-i" class="grade pequena"></section>
+          <nav class="paginas"><button id="pag-ant-i" type="button" class="chip">← Anterior</button><span id="pag-info-i"></span><button id="pag-prox-i" type="button" class="chip">Próxima →</button></nav>
+        </div>
+
+        <!-- ABA: GOLPES -->
+        <div id="aba-golpes" hidden>
+          <section class="painel">
+            <h2>Golpes</h2>
+            <p class="dica">Clique em um golpe para ver a ficha completa: poder, precisão, PP, prioridade, efeito e leitura competitiva.</p>
+            <div class="filtros">
+              <input id="busca-g" type="search" placeholder="Buscar golpe por nome (em inglês)…" aria-label="Buscar golpe">
+              <select id="filtro-tipo-g" aria-label="Tipo do golpe"><option value="">Todos os tipos</option></select>
+            </div>
+          </section>
+          <section id="grade-g" class="grade pequena"></section>
+          <nav class="paginas"><button id="pag-ant-g" type="button" class="chip">← Anterior</button><span id="pag-info-g"></span><button id="pag-prox-g" type="button" class="chip">Próxima →</button></nav>
+        </div>
+
+        <!-- ABA: GUIA -->
+        <div id="aba-guia" hidden>
+          <section class="painel guia">
+            <h2>Como funcionam os itens</h2>
+            <ul>
+              <li><b>Medicamentos:</b> Poções, Reviver, Antídotos etc. restauram PS/PP ou curam condições. Em batalha, usar um item gasta o turno.</li>
+              <li><b>Poké Bolas:</b> capturam Pokémon selvagens. A chance depende da taxa de captura da espécie, dos PS restantes, de condições de status e do tipo de bola (Great, Ultra…). A Master Ball não falha.</li>
+              <li><b>TMs/TRs/HMs:</b> ensinam golpes. TRs (Gen 8) eram de uso único; as TMs dos jogos mais recentes são reutilizáveis.</li>
+              <li><b>Frutas (Berries):</b> seguradas, ativam sozinhas numa condição (ex.: Sitrus Berry cura quando os PS caem abaixo da metade) e são consumidas.</li>
+              <li><b>Itens seguráveis (held items):</b> um por Pokémon, com efeito passivo ou ativo em batalha. Ex.: Leftovers (recupera PS todo turno), Choice Band/Specs/Scarf (+50% em um atributo, mas trava no mesmo golpe), Life Orb (+30% de dano com custo de PS), Focus Sash (sobrevive com 1 PS se estiver com PS cheios).</li>
+              <li><b>Evolução:</b> Pedras (Fire Stone etc.), Link Cable, Metal Coat e outros itens disparam evoluções específicas.</li>
+              <li><b>EVs:</b> Vitaminas (HP Up, Protein, Iron, Calcium, Zinc, Carbos) dão EVs diretamente; os Power items somam EVs extras a cada Pokémon derrotado.</li>
+              <li><b>Mega Stones:</b> o Pokémon compatível precisa segurar a pedra para Mega Evoluir (uma vez por batalha).</li>
+              <li><b>Gen 9:</b> Tera Shards alteram o Tera Type; a Terastalização substitui Mega Evolução e Dynamax em Scarlet/Violet.</li>
+              <li><b>Itens-chave:</b> progridem a história e não podem ser vendidos nem descartados.</li>
+            </ul>
+            <h3>Atributos de item (como aparecem na ficha)</h3>
+            <p class="dica">Contável: pode ter várias unidades. Consumível: some após o uso. Usável fora da batalha / em batalha. Pode ser segurado (passivo ou ativo).</p>
+
+            <h2>EVs (Effort Values)</h2>
+            <ul>
+              <li>Cada espécie concede 1 a 3 pontos de EV em um ou mais atributos ao ser <b>derrotada</b>. Nos jogos recentes (a partir da Gen 6), <b>capturar</b> um Pokémon selvagem também concede EXP e EVs.</li>
+              <li>Limites: <b>252 por atributo</b> e <b>510 no total</b>. A cada 4 EVs, +1 ponto no atributo no nível 100.</li>
+              <li>Pokérus dobra os EVs ganhos em batalha; Power items somam um bônus fixo.</li>
+              <li>Batalhas que não dão EXP (ex.: Battle Tower) também não dão EVs.</li>
+            </ul>
+
+            <h2>Aprendizado de golpes</h2>
+            <ul>
+              <li><b>Por nível:</b> o golpe é aprendido ao atingir o nível indicado. Nível 1 = golpe inicial; "Evo." = aprendido ao evoluir.</li>
+              <li><b>Ovo, Tutor e TM:</b> outras formas de aprender golpes; a lista muda de jogo para jogo, por isso a ficha tem um seletor de versão.</li>
+            </ul>
+
+            <h2>Leitura competitiva de golpes</h2>
+            <ul>
+              <li><b>STAB:</b> golpe do mesmo tipo do usuário causa +50% de dano.</li>
+              <li><b>Prioridade:</b> valores positivos agem antes, independentemente da Velocidade.</li>
+              <li><b>Crítico:</b> alguns golpes têm taxa de crítico elevada.</li>
+              <li><b>Golpes em área:</b> em batalhas duplas, o dano cai para 75% quando atingem mais de um alvo.</li>
+              <li><b>Físico x Especial:</b> físicos usam Ataque/Defesa; especiais usam Atq. Esp./Def. Esp.</li>
+              <li>Valores (poder, precisão, PP) mudaram ao longo das gerações; a ficha mostra o histórico quando a PokéAPI o registra.</li>
+            </ul>
+
+            <h2>Mega Evolução, Gigantamax e Terastalização</h2>
+            <ul>
+              <li><b>Mega Evolução:</b> introduzida na Gen 6; exige Mega Stone e uma Mega Ring/acessório. Retornou em Pokémon Legends: Z-A (2025) com novas Megas.</li>
+              <li><b>Gigantamax:</b> exclusivo de Sword/Shield (Gen 8); transforma espécies específicas durante o Dynamax e dá acesso a um golpe G-Max. É forma só de batalha.</li>
+              <li><b>Terastalização:</b> exclusiva de Scarlet/Violet (Gen 9).</li>
+            </ul>
+            <p class="dica">Fonte dos dados: PokéAPI (cobre até Scarlet/Violet e já recebe dados de Legends: Z-A). Alguns campos de formas novas podem estar incompletos; nesses casos a ficha usa os golpes da forma base. Descrições de itens, golpes e habilidades vêm em inglês; use o link “Traduzir” de cada ficha.</p>
+          </section>
+        </div>
+
+        <!-- ABA: EXPLORADOR -->
+        <div id="aba-explorador" hidden>
+          <section class="painel" aria-label="Explorador da PokéAPI">
+            <h2>Explorador da PokéAPI</h2>
+            <p class="dica">Todos os endpoints da especificação oficial (v2.10.0). Deixe o campo vazio para ver a lista, ou digite um número/nome. Clique nos links do resultado para navegar.</p>
+            <div class="linha">
+              <select id="ex-endpoint" aria-label="Endpoint"></select>
+              <input id="ex-param" type="text" aria-label="Número ou nome">
+              <button id="ex-ir" type="button" class="chip destaque">Consultar</button>
+            </div>
+            <p id="ex-url" class="url"></p>
+            <div id="ex-resultado" class="resultado"></div>
+          </section>
+        </div>
+      </main>
+
+      <aside class="lat" id="lat-dir" aria-hidden="true"></aside>
+    </div>
   </div>
 
   <dialog id="detalhe" class="detalhe"></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
-
   <script src="/app.js"></script>
 </body>
 </html>
