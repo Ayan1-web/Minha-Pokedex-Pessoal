@@ -54,7 +54,7 @@ button { font: inherit; }
 .conteudo { max-width: 72rem; margin: 0 auto; padding: 1.25rem; }
 
 /* Resumo */
-.resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+.resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
 .stat {
   padding: 1rem 1.2rem; border-radius: 18px; border: 3px solid var(--tinta); color: #fff;
   box-shadow: 4px 4px 0 var(--tinta); display: flex; flex-direction: column;
@@ -133,7 +133,7 @@ input[type="text"], input[type="search"], select {
 }
 .cartao:hover, .cartao:focus-visible { transform: translateY(-4px) rotate(-1deg); outline: none; }
 .cartao .num { position: absolute; top: .6rem; left: .8rem; font-weight: 800; color: var(--suave); }
-.cartao img { width: 120px; height: 120px; object-fit: contain; margin-top: .6rem; }
+.cartao > img { width: 120px; height: 120px; object-fit: contain; margin-top: .6rem; }
 .cartao .sem-img { font-size: 4rem; height: 120px; display: grid; place-items: center; }
 .cartao h3 { margin: .3rem 0 .5rem; font-size: 1.1rem; }
 .fav { position: absolute; top: .4rem; right: .5rem; font-size: 1.6rem; line-height: 1; cursor: pointer; background: none; border: 0; color: #d1d5db; }
@@ -147,7 +147,7 @@ input[type="text"], input[type="search"], select {
 .detalhe { width: min(36rem, 94vw); max-height: 92vh; border: 4px solid var(--tinta); border-radius: 24px; padding: 0; overflow: auto; box-shadow: 8px 8px 0 var(--tinta); }
 .detalhe::backdrop { background: rgba(30, 27, 75, .6); }
 .det-topo { padding: 1.2rem; text-align: center; color: #fff; background: var(--cor, var(--roxo)); }
-.det-topo img { width: 170px; height: 170px; object-fit: contain; filter: drop-shadow(0 6px 0 rgba(0,0,0,.2)); }
+.det-topo > img { width: 170px; height: 170px; object-fit: contain; filter: drop-shadow(0 6px 0 rgba(0,0,0,.2)); }
 .det-topo h2 { margin: .2rem 0; font-size: 1.8rem; }
 .det-corpo { padding: 1.2rem 1.4rem 1.4rem; background: #fff; }
 .det-corpo h4 { margin: 1rem 0 .4rem; color: var(--roxo); }
@@ -157,17 +157,6 @@ input[type="text"], input[type="search"], select {
 .barra { display: grid; grid-template-columns: 6.2rem 2.4rem 1fr; gap: .6rem; align-items: center; margin: .3rem 0; font-size: .9rem; }
 .trilho { height: 12px; background: #e5e7eb; border-radius: 999px; overflow: hidden; border: 2px solid var(--tinta); }
 .preench { height: 100%; background: var(--cor, var(--verde)); }
-
-/* Explorador */
-.resultado { margin-top: .8rem; max-height: 60vh; overflow: auto; border: 3px solid var(--tinta); border-radius: 14px; padding: .8rem; background: #fafafa; font-size: .9rem; }
-.resultado:empty { display: none; }
-.resultado a { color: var(--azul); font-weight: 700; word-break: break-all; }
-.resultado details { margin-left: 1rem; }
-.resultado summary { cursor: pointer; }
-.j-linha { margin-left: 1rem; word-break: break-word; }
-.j-num { color: var(--laranja); font-weight: 700; }
-.j-img { height: 64px; vertical-align: middle; image-rendering: pixelated; background: #e5e7eb; border-radius: 8px; }
-.lista-res { display: flex; flex-wrap: wrap; gap: .4rem; }
 
 /* Aviso */
 .toast {
@@ -207,3 +196,75 @@ input[type="text"], input[type="search"], select {
 .det-corpo select { min-width: 0; padding: .4rem .6rem; }
 .det-corpo .linha { margin: .4rem 0; }
 .nota { font-size: .8rem; color: var(--suave); }
+
+/* ===== v5 ===== */
+html { -webkit-text-size-adjust: 100%; }
+body { min-height: 100vh; min-height: 100dvh; -webkit-tap-highlight-color: transparent; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.topo { padding-top: calc(.9rem + env(safe-area-inset-top)); }
+
+/* Abas simétricas: 4 colunas iguais */
+.abas { display: grid; grid-template-columns: repeat(4, 1fr); gap: .7rem; }
+.abas .chip { text-align: center; padding: .7rem .5rem; }
+
+/* Tipos com símbolo */
+.tipo { display: inline-flex; align-items: center; gap: .3rem; padding-left: .25rem; }
+.tipo img { width: 18px; height: 18px; border-radius: 50%; background: #fff3; }
+.barra-tipos { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: center; margin-bottom: .8rem; }
+.tbtn { width: 46px; height: 46px; padding: 0; border-radius: 50%; border: 3px solid transparent; background: none; cursor: pointer; transition: transform .12s; }
+.tbtn img { width: 100%; height: 100%; display: block; border-radius: 50%; }
+.tbtn:hover { transform: scale(1.1); }
+.tbtn[aria-pressed="true"] { border-color: var(--tinta); box-shadow: 0 0 0 3px var(--amarelo); transform: scale(1.12); }
+.tbtn.opaco { opacity: .45; }
+.filtros-painel { background: #ffffffb8; border: 3px solid var(--tinta); border-radius: 18px; padding: .9rem; margin-bottom: 1.25rem; }
+.filtros-painel .filtros { margin-bottom: 0; }
+.filtros select { flex: 1 1 11rem; }
+.rapidos .chip { padding: .45rem .9rem; }
+.tipos-card { display: flex; gap: .25rem; justify-content: center; margin: .2rem 0 .4rem; min-height: 26px; }
+.tipos-card img { width: 26px; height: 26px; border-radius: 50%; }
+.selo { position: absolute; left: .6rem; bottom: .6rem; font-size: .7rem; font-weight: 800; background: var(--amarelo); border: 2px solid var(--tinta); border-radius: 999px; padding: .05rem .5rem; }
+.slot .tipos-card { margin: 0; min-height: 0; } .slot .tipos-card img { width: 18px; height: 18px; }
+
+/* Lista completa com filtro (quem aprende o golpe etc.) */
+.filtro-lista { width: 100%; margin: .2rem 0 .5rem; }
+.lista-poke { display: flex; flex-wrap: wrap; gap: .35rem; max-height: 15rem; overflow: auto; padding: .4rem; border: 2px solid var(--tinta); border-radius: 12px; background: #fafafa; }
+.lista-poke .chip { display: inline-flex; align-items: center; gap: .25rem; }
+.lista-poke img { image-rendering: pixelated; }
+.lista-poke [hidden] { display: none !important; }
+
+/* Z-Crystals */
+.z-tabela { width: 100%; border-collapse: collapse; font-size: .85rem; margin: .4rem 0; }
+.z-tabela th, .z-tabela td { text-align: left; padding: .3rem .4rem; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+.z-tabela img { width: 28px; height: 28px; image-rendering: pixelated; vertical-align: middle; }
+
+/* Fechar fixo na janela */
+.x-fechar { position: sticky; top: .5rem; display: block; margin: .5rem .5rem -3rem auto; width: 40px; height: 40px; z-index: 5; border-radius: 50%; border: 3px solid var(--tinta); background: #fff; font-weight: 800; cursor: pointer; }
+
+/* ===== Celular ===== */
+input[type="text"], input[type="search"], select { font-size: 16px; }
+@media (max-width: 720px) {
+  .abas { grid-template-columns: repeat(2, 1fr); }
+  .conteudo, .layout .conteudo { padding: .8rem 0; }
+  .layout { padding: 0 .7rem; }
+  .topo { padding: calc(.7rem + env(safe-area-inset-top)) .8rem .7rem; }
+  .usuario-texto small { display: none; }
+  .marca { font-size: 1.15rem; }
+  .resumo { grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+  .stat { padding: .7rem .8rem; } .stat span { font-size: 1.5rem; }
+  .painel { padding: .9rem; box-shadow: 4px 4px 0 var(--roxo); }
+  .slots { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .slot { min-height: 7.5rem; } .slot img { width: 64px; height: 64px; }
+  .eq-lista { grid-template-columns: 1fr; }
+  .grade { grid-template-columns: repeat(2, 1fr); gap: .7rem; }
+  .grade.pequena { grid-template-columns: repeat(2, 1fr); }
+  .cartao { padding: .6rem; } .cartao > img { width: 96px; height: 96px; } .cartao h3 { font-size: .95rem; }
+  .filtros select, .filtros input { flex: 1 1 100%; min-width: 0; }
+  .linha input { min-width: 0; flex: 1 1 100%; }
+  .chip, .mini-btn { min-height: 40px; }
+  .tbtn { width: 40px; height: 40px; }
+  .detalhe { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; border-width: 0; box-shadow: none; }
+  .det-topo > img { width: 130px; height: 130px; }
+  .barra { grid-template-columns: 5rem 2.2rem 1fr; }
+  .toast { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 380px) { .grade, .grade.pequena { grid-template-columns: 1fr 1fr; } .abas { gap: .4rem; } }
+@media (max-width: 720px) { .resumo .stat:last-child:nth-child(odd) { grid-column: 1 / -1; } }

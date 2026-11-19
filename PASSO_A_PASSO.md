@@ -1,57 +1,59 @@
-# Pokédex Pessoal v4 — Atualização passo a passo (para leigos)
+# Pokédex Pessoal v5 — Atualização passo a passo (para leigos)
 
 Você já tem Vercel, Google Cloud e variáveis configurados. **Nada disso muda.**
 Só vamos trocar os arquivos do repositório `guia-login-google` e esperar a Vercel publicar.
 
-## O que há de novo na v4
-- **Mega Evoluções e Gigantamax:** filtro "Variações" na Pokédex (Espécies base, Mega, Gigantamax, Regionais, Todas) e lista de formas dentro de cada Pokémon. Dá para colocar Megas e Gigantamax nas equipes (busque `charizard-mega-x` ou `venusaur-gmax`).
-- **Itens:** nova aba com todos os itens da PokéAPI, com busca, filtro por categoria e ficha (efeito, descrição, atributos, preço, arremesso, TM ensina qual golpe, quem carrega).
-- **Golpes:** nova aba com todos os golpes e ficha com **leitura competitiva** (poder, precisão, PP, prioridade, STAB, crítico, status, recuo, cura, histórico de mudanças entre gerações, quem aprende).
-- **Cada Pokémon:** golpes **por nível** com seletor de versão do jogo (padrão: a mais recente), outras formas de aprender (ovo, tutor, TM), **EVs concedidos** ao derrotar/capturar, fraquezas e resistências, habilidades clicáveis com descrição, linha evolutiva, treino/criação e locais de encontro.
-- **Guia e Mecânicas:** como funcionam itens, EVs, aprendizado de golpes, leitura competitiva, Mega/Gigantamax/Tera.
-- **Pokébolas ilustradas** nas laterais após o login (aparecem em telas largas).
-- **Explorador:** agora segue a especificação oficial da PokéAPI (v2.10.0).
+## O que há de novo na v5
+- **Explorador da API removido.** As 4 abas agora ocupam a largura toda em colunas iguais.
+- **Símbolos de tipo** (os 18 da sua imagem) nos cartões, nas fichas, nas equipes e como filtros por ícone (Pokédex: até 2 tipos ao mesmo tempo; Golpes: 1 tipo).
+- **Novos filtros na Pokédex:** variações (Mega/Primal, Gigantamax, regionais, **alternativas** como as 5 formas do Rotom, todas), geração, cor, habitat, grupo de ovos, formato do corpo, ordenação e "Limpar filtros".
+- **Novos filtros em Itens** (categoria, atributo e atalhos: Z-Crystals, Mega Stones, Poké Bolas, TM/TR/HM, seguráveis, frutas) e em **Golpes** (tipo, classe, geração).
+- **Z-Crystals:** os 35 (18 de tipo + 17 exclusivos) com Golpe Z, requisito e regras. Ficam disponíveis mesmo que a PokéAPI não os liste.
+- **Definição de itens:** quando a PokéAPI não traz efeito oficial, a ficha mostra a definição geral da categoria + descrição do jogo + explicação de cada atributo.
+- **Golpes:** a ficha agora lista **todos** os Pokémon que aprendem o golpe (ex.: os 281 do Thunder Punch), com campo para filtrar a lista. Também em habilidades e itens.
+- **PDF:** exportar e importar equipes e favoritos em arquivo PDF.
+- **Celular:** layout ajustado (testado em tela de 390 px), botão ✕ fixo nas fichas, tela cheia nas fichas, ícone e manifesto para "instalar" como app.
 
-## Importante sobre a lista de APIs
-- `item-price` **não existe** na especificação oficial enviada; foi removido.
-- `meta` **existe** na especificação e foi adicionado.
-
-## PASSO 1 — Preparar os arquivos
+## PASSO 1 — Preparar
 1. Baixe e extraia o **guia-login-google.zip**.
-2. Dentro da pasta extraída estão: `api`, `lib`, `public`, `package.json`, `vercel.json`.
+2. Dentro da pasta extraída: `api`, `lib`, `public`, `package.json`, `vercel.json`.
+3. Dentro de `public` há agora uma pasta **`tipos`** (18 imagens), além de `manifest.webmanifest`, `icone-192.png`, `icone-512.png` e `apple-touch-icon.png`.
 
-## PASSO 2 — Enviar ao GitHub (substituindo os antigos)
-1. Abra o repositório **guia-login-google** no GitHub.
-2. **Add file → Upload files**.
-3. Arraste **tudo que está DENTRO da pasta extraída** (não a pasta externa).
-4. **Commit changes**. Arquivos com o mesmo nome são substituídos.
+## PASSO 2 — Enviar ao GitHub
+1. Abra o repositório **guia-login-google** → **Add file → Upload files**.
+2. Arraste **tudo que está DENTRO da pasta extraída** (inclusive a pasta `public` com a subpasta `tipos`). Use Chrome ou Edge para o GitHub aceitar pastas.
+3. **Commit changes**.
+4. Se as imagens de `tipos` não subirem: entre em `public` no GitHub → **Add file → Upload files** e arraste a pasta `tipos` inteira; depois **Commit changes**.
 
 ## PASSO 3 — Conferir
-No GitHub confira: `lib/endpoints.js` contém a palavra `meta` e **não** contém `item-price`; `public/app.js` contém `Guia e Mecânicas` ou `leituraCompetitiva`.
+- `public/tipos/` tem 18 arquivos `.png` (bug, dark, dragon, electric, fairy, fighting, fire, flying, ghost, grass, ground, ice, normal, poison, psychic, rock, steel, water).
+- `public/app.js` contém `criarPdf`.
+- Se existir `public/teste.html`, apague-o.
 
 ## PASSO 4 — Esperar a Vercel
-Projeto **qi82 → Deployments**: espere o deploy mais recente ficar **Ready**.
+Projeto **qi82 → Deployments**: espere ficar **Ready**.
 
 ## PASSO 5 — Testar
-1. Abra `https://guia-login-google-qi82.vercel.app` em janela anônima e entre com o Google.
-2. Veja as pokébolas nas laterais (em telas largas, a partir de ~1180 px).
-3. Pokédex: em "Variações" escolha **Mega Evoluções**, depois **Gigantamax**.
-4. Abra um Pokémon (ex.: Charizard): veja EVs, formas, habilidades, golpes por nível (troque a versão do jogo), fraquezas e "Ver locais de encontro".
-5. Clique em um golpe da tabela → ficha competitiva. Clique em uma habilidade → descrição. Use **← Voltar**.
-6. Aba **Itens**: busque `master-ball`, `leftovers`, `charizardite-x`; filtre por categoria.
-7. Aba **Golpes**: filtre por tipo e abra `thunderbolt`.
-8. Aba **Guia e Mecânicas** e **Explorador da API**.
+1. Abra o site em janela anônima e entre com o Google.
+2. Clique em dois ícones de tipo (ex.: Fogo + Voador) e veja o filtro.
+3. Filtro "Variações → Formas alternativas": aparecem Rotom Heat/Wash/Frost/Fan/Mow e outras.
+4. Aba **Golpes** → ícone Elétrico → abra **thunder-punch** → role até a lista e digite um nome para filtrar.
+5. Aba **Itens** → atalho **⚡ Z-Crystals** → abra **firium-z**.
+6. Monte uma equipe → **📄 Exportar PDF** → exclua a equipe → **📥 Importar PDF** e escolha o arquivo.
+
+## No celular
+- Use **Chrome (Android)** ou **Safari (iPhone)**. Dentro do navegador interno de apps (Instagram, WhatsApp, Facebook) o Google bloqueia o login.
+- Instalar: Chrome → ⋮ → "Adicionar à tela inicial"; Safari → Compartilhar → "Adicionar à Tela de Início".
 
 ## Se algo der errado
 | Sintoma | Solução |
 |---|---|
-| Continua a versão antiga | **Ctrl + Shift + R**; confirme deploy **Ready**. |
-| Abas Itens/Golpes vazias | Aguarde alguns segundos (carregam em segundo plano). Se persistir, abra `.../api/pokeapi?caminho=item&limit=5` já logado. |
-| Forma nova (Mega de Legends: Z-A) sem golpes próprios | A PokéAPI pode ainda não ter esses dados; o app mostra os golpes da forma base e avisa. |
-| Textos de itens/golpes/habilidades em inglês | Vêm assim da PokéAPI. Use o link **Traduzir ↗** da ficha. |
-| Imagem de uma forma aparece como ❓ | A imagem oficial dessa forma pode não existir no repositório de sprites. |
-| Equipes sumiram em outro computador | Ficam no navegador: use **Exportar/Importar equipes**. |
+| Símbolos de tipo não aparecem | Confira `public/tipos/*.png` no GitHub (Passo 2.4). |
+| Tipos demoram a aparecer nos cartões | Carregam em segundo plano (18 consultas); aguarde alguns segundos. |
+| Aviso "A PokéAPI não retornou essa categoria" | O atalho usa nomes de categoria que podem diferir; use o filtro "Categoria". |
+| Importar PDF diz "sem dados de importação" | Só funciona com PDFs gerados por este app e sem edição. |
+| Continua a versão antiga | **Ctrl + Shift + R** e confirme deploy **Ready**. |
 
 ## Limites
-- Dados e textos seguem a PokéAPI (jogos principais). Itens de outros universos (anime, TCG, Pokémon GO) não estão incluídos.
-- Equipes e favoritos ficam no navegador (sem banco de dados).
+- Textos oficiais de itens, golpes e habilidades vêm em inglês (use "Traduzir ↗").
+- Equipes e favoritos ficam no navegador; para levar a outro aparelho use o PDF.
