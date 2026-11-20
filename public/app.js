@@ -127,7 +127,8 @@ const chipTipo = (t) => {
 };
 const POR_PAGINA = 24, MAX_EQUIPE = 6, MAX_EQUIPES = 30;
 let usuario = null, lista = [], porId = new Map(), favoritos = new Set(), equipes = [];
-let rascunho = { id: null, nome: "", membros: [] }, pagina = 1, timerAviso;
+let rascunho = { id: null, nome: "", formato: "singles", membros: [] }, pagina = 1, timerAviso;
+let tabelaTipos = {}, tiposPromise = null, metaFormato = "singles", estrategiaSel = "";
 let tiposPor = new Map(), golpesTipo = new Map(), tiposProntos = false, formasDe = new Map();
 const tiposSel = new Set();
 let filtrosEsp = { geracao: null, cor: null, habitat: null, ovo: null, formato: null };
@@ -222,7 +223,7 @@ async function carregarTipos() {
   const tmp = new Map();
   for (const [t, d] of res) {
     if (!d) continue;
-    golpesTipo.set(t, new Set(d.moves.map((x) => idDaUrl(x.url))));
+    golpesTipo.set(t, new Set(d.moves.map((x) => idDaUrl(x.url)))); tabelaTipos[t] = d.damage_relations;
     d.pokemon.forEach((x) => { const id = idDaUrl(x.pokemon.url); if (!tmp.has(id)) tmp.set(id, []); tmp.get(id).push([x.slot, t]); });
   }
   tmp.forEach((a, id) => tiposPor.set(id, a.sort((x, y) => x[0] - y[0]).map((x) => x[1])));
@@ -237,8 +238,8 @@ async function mostrarApp(u) {
   if (u.foto) { $("foto").src = u.foto; $("foto").hidden = false; } else { $("foto").hidden = true; }
   favoritos = new Set(ler("favoritos:" + u.sub, []));
   equipes = ler("equipes:" + u.sub, []);
-  rascunho = { id: null, nome: "", membros: [] };
-  $("eq-nome").value = "";
+  rascunho = { id: null, nome: "", formato: "singles", membros: [] };
+  $("eq-nome").value = ""; $("eq-formato").value = "singles"; estrategiaSel = "";
   $("tela-login").hidden = true; $("tela-app").hidden = false;
   $("grade").innerHTML = '<p class="vazio">Carregando Pokédex…</p>';
   desenharEditor(); desenharEquipes(); atualizarResumo();
@@ -251,7 +252,7 @@ async function mostrarApp(u) {
     formasDe = new Map(); lista.forEach((p) => formasDe.set(p.especie, (formasDe.get(p.especie) || 0) + 1));
   } catch (e) { $("grade").innerHTML = `<p class="vazio erro">${esc(e.message)}</p>`; return; }
   atualizarResumo(); desenharGrade();
-  carregarTipos();
+  tiposPromise = carregarTipos();
   preencherSelect("filtro-geracao", "generation", romano);
   preencherSelect("filtro-cor", "pokemon-color", (n) => PT_COR[n] || bonito(n));
   preencherSelect("filtro-habitat", "pokemon-habitat", (n) => PT_HAB[n] || bonito(n));
@@ -264,8 +265,8 @@ async function mostrarApp(u) {
     ZNOMES.forEach((n, k) => { if (!ja.has(n)) itens.push({ id: 900000 + k, nome: n, local: true }); });
     catItens.itens = itens; catItens.desenhar(); atualizarResumo();
   }).catch(() => {});
-  api("item-category", { limit: 200 }).then((dd) => { $("filtro-cat-item").innerHTML = '<option value="">Todas as categorias</option>' + dd.results.map((r) => `<option value="${esc(r.name)}">${esc(bonito(r.name))}</option>`).join(""); }).catch(() => {});
-  api("item-attribute", { limit: 50 }).then((dd) => { $("filtro-atrib-item").innerHTML = '<option value="">Todos os atributos</option>' + dd.results.map((r) => `<option value="${esc(r.name)}">${esc(ATRIB[r.name] || bonito(r.name))}</option>`).join(""); }).catch(() => {});
+  api("item-category", { limit: 200 }).then((dd) => { $("filtro-cat-item").innerHTML = '<option value="">Categoria: todas</option>' + dd.results.map((r) => `<option value="${esc(r.name)}">${esc(bonito(r.name))}</option>`).join(""); }).catch(() => {});
+  api("item-attribute", { limit: 50 }).then((dd) => { $("filtro-atrib-item").innerHTML = '<option value="">Atributo: todos</option>' + dd.results.map((r) => `<option value="${esc(r.name)}">${esc(ATRIB[r.name] || bonito(r.name))}</option>`).join(""); }).catch(() => {});
   api("move", { limit: 3000 }).then((dd) => { catGolpes.itens = dd.results.map((r) => ({ id: idDaUrl(r.url), nome: r.name })); catGolpes.desenhar(); }).catch(() => {});
 }
 
@@ -284,12 +285,16 @@ function filtrar() {
   const forma = $("filtro-forma").value;
   const sets = Object.values(filtrosEsp).filter(Boolean);
   const ordem = $("filtro-ordem").value;
-  const r = lista.filter((p) =>
-    (forma === "todas" || p.classe === forma) &&
-    (!termo || p.nome.includes(termo) || String(p.id) === termo) &&
-    (!soFav || favoritos.has(p.id)) &&
-    (!tiposSel.size || [...tiposSel].every((t) => (tiposPor.get(p.id) || []).includes(t))) &&
-    sets.every((s) => s.has(p.especie)));
+  const ok = (p) => (!termo || p.nome.includes(termo) || String(p.id) === termo) && (!soFav || favoritos.has(p.id)) &&
+    (!tiposSel.size || [...tiposSel].every((t) => (tiposPor.get(p.id) || []).includes(t))) && sets.every((s) => s.has(p.especie));
+  if (estrategiaSel) {
+    const est = META[metaFormato].estrategias.find((e) => e.id === estrategiaSel);
+    if (est) {
+      return ordemInterna(metaFormato, est).map((c) => ({ c, p: acharPoke(c.n) })).filter((x) => x.p)
+        .map((x, i) => Object.assign({}, x.p, { estr: { rank: i + 1, motivo: x.c.motivo, pos: x.c.pos } })).filter(ok);
+    }
+  }
+  const r = lista.filter((p) => (forma === "todas" || p.classe === forma) && ok(p));
   if (ordem === "num-desc") r.sort((a, b) => b.id - a.id);
   else if (ordem === "nome") r.sort((a, b) => a.nome.localeCompare(b.nome));
   else if (ordem === "nome-desc") r.sort((a, b) => b.nome.localeCompare(a.nome));
@@ -304,6 +309,7 @@ const cartao = (p) => `
     <img src="${IMG(p.id)}" alt="${esc(bonito(p.nome))}" loading="lazy" onerror="imgErro(this,${p.id})">
     <h3>${esc(bonito(p.nome))}</h3>
     <div class="tipos-card">${iconesTipo(p.id)}</div>
+    ${p.estr ? `<span class="rank-estr" title="Posição nesta estratégia">#${p.estr.rank}</span><p class="motivo">${esc(p.estr.motivo)}${p.estr.pos ? ` (uso #${p.estr.pos} no meta)` : ""}</p>` : ""}
     <button type="button" class="chip mini-btn" data-add="${p.id}">+ Equipe</button>
     ${p.classe === "base" && formasDe.get(p.especie) > 1 ? `<span class="selo">${formasDe.get(p.especie) - 1} forma(s)</span>` : ""}
   </article>`;
@@ -348,7 +354,7 @@ $("limpar").addEventListener("click", () => {
   $("busca").value = ""; $("filtro-forma").value = "base"; $("filtro-ordem").value = "num";
   ["filtro-geracao", "filtro-cor", "filtro-habitat", "filtro-ovo", "filtro-formato"].forEach((id) => { $(id).value = ""; });
   filtrosEsp = { geracao: null, cor: null, habitat: null, ovo: null, formato: null };
-  tiposSel.clear(); $("so-fav").setAttribute("aria-pressed", "false"); pagina = 1; desenharGrade();
+  tiposSel.clear(); $("so-fav").setAttribute("aria-pressed", "false"); pagina = 1; estrategiaSel = ""; $("filtro-estrategia").value = ""; renderFaixa(); desenharGrade();
 });
 $("pag-ant").addEventListener("click", () => { pagina--; desenharGrade(); window.scrollTo({ top: 0, behavior: "smooth" }); });
 $("pag-prox").addEventListener("click", () => { pagina++; desenharGrade(); window.scrollTo({ top: 0, behavior: "smooth" }); });
@@ -429,7 +435,23 @@ montarBarra("barra-tipos-g", (t) => {
 $("filtro-classe-g").addEventListener("change", async () => { const v = $("filtro-classe-g").value; catGolpes.pag = 1; catGolpes.filtros.classe = v ? await conjuntoDe("move-damage-class", v, "moves") : null; catGolpes.desenhar(); });
 $("filtro-geracao-g").addEventListener("change", async () => { const v = $("filtro-geracao-g").value; catGolpes.pag = 1; catGolpes.filtros.geracao = v ? await conjuntoDe("generation", v, "moves") : null; catGolpes.desenhar(); });
 
-/* ---------- Equipes ---------- */
+/* ---------- Equipes, sets, avaliação e meta ---------- */
+const FORMATOS = { singles: "Singles (OU)", duplas: "Duplas (VGC)" };
+const NOTA_COR = { S: "#7c3aed", A: "#22c55e", B: "#3b82f6", C: "#eab308", D: "#f97316", F: "#ef4444" };
+const PRESETS = {
+  "Ofensivo físico (Atq/Vel)": { attack: 252, speed: 252, hp: 4 }, "Ofensivo especial (AtqEsp/Vel)": { "special-attack": 252, speed: 252, hp: 4 },
+  "Resistente físico (HP/Def)": { hp: 252, defense: 252, "special-defense": 4 }, "Resistente especial (HP/DefEsp)": { hp: 252, "special-defense": 252, defense: 4 },
+};
+const slug = (s) => String(s || "").trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "");
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const sigEquipe = (e) => { const t = JSON.stringify([e.formato || "singles", e.membros.map((m) => [m.id, m.set || null])]); let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0; return String(h); };
+const setVazio = () => ({ habilidade: "", natureza: "", item: "", tera: "", golpes: ["", "", "", ""], ivs: Object.fromEntries(STAT_ORDEM.map((k) => [k, 31])), evs: Object.fromEntries(STAT_ORDEM.map((k) => [k, 0])) });
+const natTxt = (n) => { const x = NATUREZAS[n]; return x ? (x[0] ? `${nomeBonito(n)} (+${STAT_ROT[x[0]]}, −${STAT_ROT[x[1]]})` : `${nomeBonito(n)} (neutra)`) : "–"; };
+const totalPts = (s) => Object.values(s.evs || {}).reduce((a, b) => a + (b || 0), 0);
+const acharPoke = (sl) => lista.find((p) => p.nome === sl) || lista.find((p) => p.especie === sl && p.classe === "base");
+const novoRasc = (f) => ({ id: null, nome: "", formato: f || "singles", membros: [] });
+const gravarEquipes = () => { if (usuario) gravar("equipes:" + usuario.sub, equipes); };
+
 function desenharEditor() {
   let h = "";
   for (let i = 0; i < MAX_EQUIPE; i++) {
@@ -437,25 +459,57 @@ function desenharEditor() {
     h += m
       ? `<div class="slot cheio" style="--cor:${PALETA[m.id % PALETA.length]}">
            <button type="button" class="slot-rm" data-rm="${i}" aria-label="Remover ${esc(bonito(m.nome))}">✕</button>
-           <img src="${SPRITE(m.id)}" alt="" data-det="${m.id}"><span>${esc(bonito(m.nome))}</span><div class="tipos-card">${iconesTipo(m.id)}</div></div>`
+           <img src="${SPRITE(m.id)}" alt="" data-det="${m.id}"><span>${esc(bonito(m.nome))}</span><div class="tipos-card">${iconesTipo(m.id)}</div>
+           <small class="slot-set">${m.set && m.set.item ? esc(bonito(m.set.item)) : "sem item"}</small>
+           <button type="button" class="chip mini-btn" data-set="${i}" aria-label="Editar set de ${esc(bonito(m.nome))}">⚙ Set</button></div>`
       : `<div class="slot"><span>Slot ${i + 1}<br>vazio</span></div>`;
   }
   $("eq-slots").innerHTML = h;
   $("eq-salvar").textContent = rascunho.id ? "Atualizar equipe" : "Salvar equipe";
 }
+function ordenarEquipes() {
+  const o = $("eq-ordem").value, arr = equipes.slice();
+  if (o === "nota") arr.sort((a, b) => ((b.aval ? b.aval.pontos : -1) - (a.aval ? a.aval.pontos : -1)) || a.nome.localeCompare(b.nome));
+  else if (o === "nome") arr.sort((a, b) => a.nome.localeCompare(b.nome));
+  else arr.sort((a, b) => (b.criada || 0) - (a.criada || 0));
+  return arr;
+}
+function setsHtml(e) {
+  const f = META[e.formato || "singles"];
+  return e.membros.map((m) => {
+    const s = m.set;
+    if (!s || !(s.item || s.habilidade || s.golpes.some(Boolean))) return `<h5>${esc(bonito(m.nome))}</h5><p class="nota">Set não definido.</p>`;
+    const ivs = STAT_ORDEM.filter((k) => s.ivs && s.ivs[k] != null && s.ivs[k] !== 31).map((k) => `${s.ivs[k]} ${STAT_ROT[k]}`).join(" / ");
+    const pts = STAT_ORDEM.filter((k) => (s.evs || {})[k] > 0).map((k) => `${s.evs[k]} ${STAT_ROT[k]}`).join(" / ");
+    return `<h5>${esc(bonito(m.nome))}</h5><dl>
+      <dt>Item</dt><dd>${s.item ? esc(bonito(s.item)) : "–"}</dd><dt>Habilidade</dt><dd>${s.habilidade ? esc(bonito(s.habilidade)) : "–"}</dd>
+      <dt>Natureza</dt><dd>${s.natureza ? esc(natTxt(s.natureza)) : "–"}</dd>${f.tera && s.tera ? `<dt>Tera</dt><dd>${esc((TIPOS[s.tera] || {}).pt || s.tera)}</dd>` : ""}
+      <dt>${f.sistema === "sp" ? "Stat Points" : "EVs"}</dt><dd>${pts ? esc(pts) + ` (total ${totalPts(s)}/${f.sistema === "sp" ? 66 : 510})` : "não definidos"}</dd>
+      ${f.sistema === "ev" ? `<dt>IVs</dt><dd>${ivs || "todos 31"}</dd>` : ""}
+      <dt>Golpes</dt><dd>${s.golpes.filter(Boolean).map((g) => esc(bonito(g))).join(", ") || "–"}</dd></dl>`;
+  }).join("");
+}
+function cartaoEquipe(e, pos) {
+  const f = e.formato || "singles", a = e.aval, velha = a && a.sig !== sigEquipe(e);
+  return `<article class="eq-card" data-eq="${e.id}">
+    <div class="eq-topo"><span class="pos">#${pos}</span><h4>${esc(e.nome)}</h4><span class="selo-fmt">${FORMATOS[f]}</span></div>
+    <div class="mini-linha">${e.membros.map((m) => `<img src="${SPRITE(m.id)}" alt="${esc(bonito(m.nome))}" title="${esc(bonito(m.nome))}" width="48" height="48">`).join("")}</div>
+    <div class="eq-nota">${a
+      ? `<span class="nota-badge" style="--c:${NOTA_COR[a.nota]}" aria-label="Nota ${a.nota}">${a.nota}</span><div><strong>${esc(a.estNome || "Estratégia indefinida")}</strong><small>${a.pontos}/100${velha ? " · desatualizada" : ""}</small></div>`
+      : '<span class="nota-badge sem" aria-label="Sem avaliação">–</span><div><small>Ainda sem avaliação</small></div>'}</div>
+    <div class="linha">
+      <button type="button" class="chip mini-btn" data-acao="aval">${a ? "Ver avaliação" : "Avaliar"}</button>
+      <button type="button" class="chip mini-btn" data-acao="editar">Editar</button>
+      <button type="button" class="chip mini-btn" data-acao="duplicar">Duplicar</button>
+      <button type="button" class="chip mini-btn" data-acao="excluir">Excluir</button>
+    </div>
+    <details class="sets-det"><summary>Ver sets (resumo acessível)</summary>${setsHtml(e)}<button type="button" class="chip mini-btn" data-acao="showdown">Copiar texto (formato Showdown)</button></details>
+  </article>`;
+}
 function desenharEquipes() {
   $("eq-qtd").textContent = `(${equipes.length}/${MAX_EQUIPES})`;
-  $("eq-lista").innerHTML = equipes.length ? equipes.map((e) => `
-    <article class="eq-card" data-eq="${e.id}">
-      <h4>${esc(e.nome)}</h4>
-      <div class="mini-linha">${e.membros.map((m) => `<img src="${SPRITE(m.id)}" alt="${esc(bonito(m.nome))}" title="${esc(bonito(m.nome))}" width="48" height="48">`).join("")}</div>
-      <div class="linha">
-        <button type="button" class="chip mini-btn" data-acao="editar">Editar</button>
-        <button type="button" class="chip mini-btn" data-acao="duplicar">Duplicar</button>
-        <button type="button" class="chip mini-btn" data-acao="excluir">Excluir</button>
-      </div>
-    </article>`).join("") : '<p class="dica">Nenhuma equipe salva ainda.</p>';
-  atualizarResumo();
+  $("eq-lista").innerHTML = equipes.length ? ordenarEquipes().map((e, i) => cartaoEquipe(e, i + 1)).join("") : '<p class="dica">Nenhuma equipe salva ainda.</p>';
+  atualizarResumo(); renderMeta();
 }
 function addMembro(p, botao) {
   if (rascunho.membros.length >= MAX_EQUIPE) { aviso("A equipe já tem 6 Pokémon. Remova um para adicionar outro."); return false; }
@@ -466,43 +520,90 @@ function addMembro(p, botao) {
   return true;
 }
 const addPorId = (id, botao) => { const p = porId.get(id); if (p) addMembro(p, botao); };
-function salvarEquipe() {
+
+/* --- avaliação --- */
+async function montarDados(team) {
+  if (!Object.keys(tabelaTipos).length) await (tiposPromise = tiposPromise || carregarTipos());
+  const f = team.formato || "singles";
+  const membros = await Promise.all(team.membros.map(async (m) => {
+    const p = await api("pokemon/" + m.id), stats = {};
+    p.stats.forEach((s) => { stats[s.stat.name] = s.base_stat; });
+    const set = m.set || null;
+    const golpesInfo = await Promise.all(((set && set.golpes) || []).filter(Boolean).map((g) => api("move/" + g)
+      .then((x) => ({ nome: g, tipo: x.type.name, classe: x.damage_class.name, poder: x.power || 0 })).catch(() => ({ nome: g, tipo: "normal", classe: "status", poder: 0 }))));
+    return { nome: p.name, especie: (porId.get(m.id) || {}).especie || p.species.name, tipos: p.types.map((t) => t.type.name), stats, set, golpesInfo };
+  }));
+  const tiposMeta = {};
+  META[f].ranking.forEach(([n]) => { const q = acharPoke(n); if (q && tiposPor.get(q.id)) tiposMeta[n] = tiposPor.get(q.id); });
+  return { membros, tabela: tabelaTipos, tiposMeta };
+}
+async function avaliarEquipe(team) {
+  const f = team.formato || "singles", d = await montarDados(team);
+  const av = avaliar(d, f), fb = feedback(av, d, f), subs = sugerirSubstitutos(av, d, f);
+  team.aval = { nota: av.nota, pontos: av.pontos, notas: av.notas, estId: av.estrategia ? av.estrategia.id : null, estNome: av.estrategia ? av.estrategia.nome : "",
+    pct: av.estrategia ? av.estrategia.pct : 0, fb, subs, ts: Date.now(), sig: sigEquipe(team) };
+  return team.aval;
+}
+async function salvarEquipe() {
   if (!rascunho.membros.length) return aviso("Adicione pelo menos 1 Pokémon antes de salvar.");
   const existente = rascunho.id && equipes.find((x) => x.id === rascunho.id);
   const nome = $("eq-nome").value.trim() || (existente ? existente.nome : "Equipe " + (equipes.length + 1));
-  if (existente) { existente.nome = nome; existente.membros = rascunho.membros.slice(); }
+  let alvo;
+  if (existente) { Object.assign(existente, { nome, formato: rascunho.formato, membros: clone(rascunho.membros) }); alvo = existente; }
   else {
     if (equipes.length >= MAX_EQUIPES) return aviso("Limite de " + MAX_EQUIPES + " equipes. Exclua uma para salvar outra.");
-    equipes.push({ id: novoId(), nome, membros: rascunho.membros.slice() });
+    alvo = { id: novoId(), nome, formato: rascunho.formato, membros: clone(rascunho.membros), criada: Date.now() }; equipes.push(alvo);
   }
-  gravar("equipes:" + usuario.sub, equipes);
-  rascunho = { id: null, nome: "", membros: [] }; $("eq-nome").value = "";
-  desenharEditor(); desenharEquipes(); aviso(`Equipe "${nome}" salva!`);
+  gravarEquipes(); const fmt = rascunho.formato; rascunho = novoRasc(fmt); $("eq-nome").value = "";
+  desenharEditor(); desenharEquipes(); aviso(`Equipe "${nome}" salva! Avaliando…`);
+  try { await avaliarEquipe(alvo); gravarEquipes(); desenharEquipes(); aviso(`"${nome}": nota ${alvo.aval.nota} (${alvo.aval.pontos}/100).`); }
+  catch (e) { aviso("Equipe salva. Não foi possível avaliar agora: " + e.message); }
 }
-function novaEquipe() { rascunho = { id: null, nome: "", membros: [] }; $("eq-nome").value = ""; desenharEditor(); aviso("Nova equipe em branco."); }
+function novaEquipe() { rascunho = novoRasc(rascunho.formato); $("eq-nome").value = ""; desenharEditor(); aviso("Nova equipe em branco."); }
 $("eq-salvar").addEventListener("click", salvarEquipe);
 $("eq-nova").addEventListener("click", novaEquipe);
+$("eq-ordem").addEventListener("change", desenharEquipes);
+$("eq-formato").addEventListener("change", () => {
+  const novo = $("eq-formato").value; if (novo === rascunho.formato) return;
+  rascunho.membros.forEach((m) => {
+    if (!m.set) return;
+    STAT_ORDEM.forEach((k) => { const v = (m.set.evs || {})[k] || 0; m.set.evs[k] = novo === "duplas" ? evParaSp(v) : spParaEv(v); if (novo === "singles") m.set.ivs[k] = 31; });
+    if (novo === "duplas") m.set.tera = "";
+  });
+  rascunho.formato = novo; desenharEditor(); aviso("Formato alterado: os EVs/Stat Points dos sets foram convertidos.");
+});
+$("eq-avaliar-todas").addEventListener("click", async () => {
+  if (!equipes.length) return aviso("Não há equipes salvas.");
+  for (let i = 0; i < equipes.length; i++) { aviso(`Avaliando ${i + 1}/${equipes.length}…`); try { await avaliarEquipe(equipes[i]); } catch (e) { /* segue para a próxima */ } }
+  gravarEquipes(); desenharEquipes(); aviso("Avaliação concluída.");
+});
 $("eq-slots").addEventListener("click", (e) => {
   const rm = e.target.closest("[data-rm]");
   if (rm) { rascunho.membros.splice(Number(rm.dataset.rm), 1); return desenharEditor(); }
+  const st = e.target.closest("[data-set]"); if (st) return abrir("set", Number(st.dataset.set));
   const d = e.target.closest("[data-det]"); if (d) abrir("poke", Number(d.dataset.det));
 });
-$("eq-lista").addEventListener("click", (e) => {
+$("eq-lista").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-acao]"); if (!b) return;
   const id = b.closest("[data-eq]").dataset.eq, eq = equipes.find((x) => x.id === id); if (!eq) return;
-  if (b.dataset.acao === "editar") {
-    rascunho = { id: eq.id, nome: eq.nome, membros: eq.membros.slice() };
-    $("eq-nome").value = eq.nome; desenharEditor();
+  const a = b.dataset.acao;
+  if (a === "aval") return abrir("aval", id);
+  if (a === "editar") {
+    rascunho = { id: eq.id, nome: eq.nome, formato: eq.formato || "singles", membros: clone(eq.membros) };
+    $("eq-nome").value = eq.nome; $("eq-formato").value = rascunho.formato; desenharEditor();
     $("eq-nome").scrollIntoView({ behavior: "smooth", block: "center" });
     aviso(`Editando "${eq.nome}". Altere e clique em Atualizar equipe.`);
-  } else if (b.dataset.acao === "duplicar") {
+  } else if (a === "duplicar") {
     if (equipes.length >= MAX_EQUIPES) return aviso("Limite de " + MAX_EQUIPES + " equipes.");
-    equipes.push({ id: novoId(), nome: eq.nome + " (cópia)", membros: eq.membros.slice() });
-    gravar("equipes:" + usuario.sub, equipes); desenharEquipes(); aviso("Equipe duplicada.");
-  } else if (b.dataset.acao === "excluir" && confirm(`Excluir a equipe "${eq.nome}"?`)) {
+    equipes.push({ id: novoId(), nome: eq.nome + " (cópia)", formato: eq.formato || "singles", membros: clone(eq.membros), criada: Date.now(), aval: eq.aval ? clone(eq.aval) : undefined });
+    gravarEquipes(); desenharEquipes(); aviso("Equipe duplicada.");
+  } else if (a === "excluir" && confirm(`Excluir a equipe "${eq.nome}"?`)) {
     equipes = equipes.filter((x) => x.id !== id);
     if (rascunho.id === id) novaEquipe();
-    gravar("equipes:" + usuario.sub, equipes); desenharEquipes(); aviso("Equipe excluída.");
+    gravarEquipes(); desenharEquipes(); aviso("Equipe excluída.");
+  } else if (a === "showdown") {
+    const t = showdownTexto(eq, eq.formato || "singles");
+    try { await navigator.clipboard.writeText(t); aviso("Texto copiado (formato Showdown)."); } catch { prompt("Copie o texto da equipe:", t); }
   }
 });
 $("eq-busca").addEventListener("input", () => {
@@ -517,10 +618,147 @@ const escolherSug = (b) => { addPorId(Number(b.dataset.add)); $("eq-busca").valu
 $("eq-busca").addEventListener("keydown", (e) => { if (e.key !== "Enter") return; e.preventDefault(); const b = $("eq-sugestoes").querySelector("[data-add]"); if (b) escolherSug(b); });
 $("eq-sugestoes").addEventListener("click", (e) => { const b = e.target.closest("[data-add]"); if (b) escolherSug(b); });
 
+/* --- painel do meta e filtro por estratégia --- */
+function renderMeta() {
+  const M = META[metaFormato], idx = indicePresenca(metaFormato);
+  const aval = equipes.filter((e) => (e.formato || "singles") === metaFormato && e.aval), cont = {};
+  aval.forEach((e) => { const k = e.aval.estId || "indef"; cont[k] = (cont[k] || 0) + 1; });
+  $("meta-fonte").textContent = `${M.rotulo} · Fonte: ${M.fonte} · dados de ${M.atualizado}`;
+  $("meta-user").textContent = aval.length
+    ? `Suas equipes: ${aval.length} avaliada(s) neste formato${cont.indef ? ` (${cont.indef} sem estratégia definida)` : ""}.`
+    : "Você ainda não tem equipes avaliadas neste formato. Salve uma equipe para ver a distribuição das suas estratégias.";
+  $("meta-lista").innerHTML = idx.map((l, i) => {
+    const e = M.estrategias.find((x) => x.id === l.id), pct = aval.length ? Math.round(100 * (cont[l.id] || 0) / aval.length) : 0, c = PALETA[i % PALETA.length];
+    return `<article class="meta-item" style="--cor:${c}">
+      <div class="meta-topo"><span class="pos">#${i + 1}</span><strong>${esc(e.nome)}</strong></div>
+      <p>${esc(e.jogo)}</p>
+      <small><span>Presença no meta (estimada)</span><span>${l.indice}/100</span></small><div class="trilho"><div class="preench" style="width:${l.indice}%;--cor:${c}"></div></div>
+      <small><span>Suas equipes com esta estratégia</span><span>${pct}%</span></small><div class="trilho"><div class="preench" style="width:${pct}%;--cor:#ec4899"></div></div>
+      <div class="linha"><button type="button" class="chip mini-btn" data-estr="${esc(e.id)}">Ver Pokémon indicados</button></div></article>`;
+  }).join("");
+  const sel = $("filtro-estrategia");
+  sel.innerHTML = '<option value="">Estratégia: todas</option>' + idx.map((l) => `<option value="${esc(l.id)}">${esc(l.nome)}</option>`).join("");
+  sel.value = M.estrategias.some((x) => x.id === estrategiaSel) ? estrategiaSel : "";
+}
+function renderFaixa() {
+  const box = $("faixa-estrategia"), est = estrategiaSel && META[metaFormato].estrategias.find((e) => e.id === estrategiaSel);
+  if (!est) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<h3>${esc(est.nome)} — ${esc(META[metaFormato].rotulo)}</h3><p>${esc(est.jogo)}</p>
+    <p><b>Pode ser quebrada por:</b> ${est.quebra.map(esc).join("; ")}.</p>
+    <p><b>Atenção:</b> o ranking abaixo mostra Pokémon que <b>costumam encaixar</b> nesta estratégia, ordenados pelo uso no meta atual. Você pode escolher <b>qualquer Pokémon</b>, conforme a situação, o contexto de batalha e a equipe que deseja montar.</p>`;
+}
+function selecionarEstrategia(id) {
+  estrategiaSel = id; pagina = 1; if ($("filtro-estrategia").value !== id) $("filtro-estrategia").value = id;
+  renderFaixa(); desenharGrade();
+}
+$("filtro-estrategia").addEventListener("change", () => selecionarEstrategia($("filtro-estrategia").value));
+$("meta-formato").addEventListener("change", () => { metaFormato = $("meta-formato").value; estrategiaSel = ""; renderMeta(); renderFaixa(); desenharGrade(); });
+$("meta-lista").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-estr]"); if (!b) return;
+  selecionarEstrategia(b.dataset.estr); $("faixa-estrategia").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+/* --- janela do set (item, habilidade, natureza, golpes, IVs e EVs) --- */
+let setEdit = null, itensHoldCache = null;
+const itensHold = () => itensHoldCache || (itensHoldCache = conjuntoDe("item-attribute", "holdable", "items").then((ids) => catItens.itens.filter((i) => !i.local && (!ids || ids.has(i.id))).map((i) => i.nome)));
+function lerSet() {
+  const f = setEdit.f, max = f.sistema === "sp" ? 32 : 252, num = (id, mx) => Math.max(0, Math.min(mx, parseInt($(id).value, 10) || 0));
+  const s = setVazio();
+  s.habilidade = $("set-hab").value; s.natureza = $("set-nat").value; s.item = slug($("set-item").value); s.tera = $("set-tera") ? $("set-tera").value : "";
+  s.golpes = [0, 1, 2, 3].map((i) => slug($("set-g" + i).value));
+  STAT_ORDEM.forEach((k) => { s.evs[k] = num("set-ev-" + k, max); s.ivs[k] = $("set-iv-" + k) ? num("set-iv-" + k, 31) : 31; });
+  return s;
+}
+function atualizarSetForm() {
+  if (!setEdit || !$("set-resumo")) return;
+  const f = setEdit.f, s = lerSet(), lim = f.sistema === "sp" ? 66 : 510, tot = totalPts(s), un = f.sistema === "sp" ? "pontos" : "EVs";
+  $("set-total").className = tot > lim ? "aviso-erro" : "aviso-ok";
+  $("set-total").textContent = `Total: ${tot} de ${lim} ${un}${tot > lim ? " — passou do limite!" : ` (restam ${lim - tot})`}`;
+  const fin = calcAtributos(setEdit.base, s, f.nivel, f.sistema);
+  $("set-stats").innerHTML = `<table class="tab"><caption class="nota">Calculado com a natureza e os ${f.sistema === "sp" ? "Stat Points" : "EVs e IVs"} informados.</caption><tr>${STAT_ORDEM.map((k) => `<th scope="col">${STAT_ROT[k]}</th>`).join("")}</tr><tr>${STAT_ORDEM.map((k) => `<td>${fin[k]}</td>`).join("")}</tr></table>`;
+  const g = s.golpes.filter(Boolean), pts = STAT_ORDEM.filter((k) => s.evs[k] > 0).map((k) => `${s.evs[k]} em ${STAT_ROT[k]}`).join(", ") || "nenhum";
+  const itemOk = !s.item || catItens.itens.some((i) => i.nome === s.item), estranhos = g.filter((x) => !setEdit.golpes.includes(x));
+  $("set-resumo").textContent = `${bonito(setEdit.p.name)} ${s.item ? "segura " + bonito(s.item) + (itemOk ? "" : " (item não reconhecido)") : "está sem item"}; habilidade ${s.habilidade ? bonito(s.habilidade) : "não escolhida"}; natureza ${s.natureza ? natTxt(s.natureza) : "não escolhida"}${f.tera && s.tera ? "; Tera " + ((TIPOS[s.tera] || {}).pt || s.tera) : ""}. ${f.sistema === "sp" ? "Stat Points" : "EVs"}: ${pts}. Golpes: ${g.length ? g.map(bonito).join(", ") : "nenhum"}.${estranhos.length ? " Atenção: " + estranhos.map(bonito).join(", ") + " não aparece(m) entre os golpes que este Pokémon aprende." : ""}`;
+}
+async function detSet(idx) {
+  const m = rascunho.membros[idx]; if (!m) throw new Error("Pokémon não encontrado na equipe.");
+  const f = META[rascunho.formato], dlg = $("detalhe");
+  const p = await api("pokemon/" + m.id);
+  let mv = p.moves;
+  if (!mv.length) { try { const esp = await api("pokemon-species/" + p.species.name), b = esp.varieties.find((v) => v.is_default); if (b) mv = (await api("pokemon/" + b.pokemon.name)).moves; } catch {} }
+  const golpes = [...new Set(mv.map((x) => x.move.name))].sort(), itens = await itensHold();
+  const s = clone(m.set || setVazio());
+  if (!s.habilidade && p.abilities.length) s.habilidade = (p.abilities.find((a) => !a.is_hidden) || p.abilities[0]).ability.name;
+  setEdit = { idx, p, f, golpes, base: Object.fromEntries(p.stats.map((x) => [x.stat.name, x.base_stat])) };
+  const max = f.sistema === "sp" ? 32 : 252;
+  dlg.innerHTML = `<div class="det-corpo set-form">
+    <h3>Set de ${esc(bonito(p.name))} <small>(${f.sistema === "sp" ? "Duplas · Nível 50" : "Singles · Nível 100"})</small></h3>
+    <div class="campos">
+      <div class="campo"><label for="set-hab">Habilidade</label><select id="set-hab" data-set="1">${p.abilities.map((a) => `<option value="${esc(a.ability.name)}">${esc(bonito(a.ability.name))}${a.is_hidden ? " (oculta)" : ""}</option>`).join("")}</select></div>
+      <div class="campo"><label for="set-nat">Natureza</label><select id="set-nat" data-set="1"><option value="">Escolha…</option>${Object.keys(NATUREZAS).map((n) => `<option value="${n}">${esc(natTxt(n))}</option>`).join("")}</select></div>
+      <div class="campo"><label for="set-item">Item</label><input id="set-item" data-set="1" list="dl-itens" autocomplete="off" placeholder="Ex.: leftovers"></div>
+      ${f.tera ? `<div class="campo"><label for="set-tera">Tera Type</label><select id="set-tera" data-set="1"><option value="">Nenhum</option>${Object.entries(TIPOS).map(([k, t]) => `<option value="${k}">${t.pt}</option>`).join("")}</select></div>` : ""}
+    </div>
+    <datalist id="dl-itens">${itens.map((i) => `<option value="${esc(i)}">`).join("")}</datalist><datalist id="dl-golpes">${golpes.map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
+    <p class="nota">Itens comuns (toque para preencher):</p>
+    <div class="chips-linha">${ITENS_COMUNS.map((i) => `<button type="button" class="chip mini-btn" data-item-rapido="${i}">${esc(bonito(i))}</button>`).join("")}</div>
+    <h4>Golpes (digite para buscar entre os que o Pokémon aprende)</h4>
+    <div class="campos">${[0, 1, 2, 3].map((i) => `<div class="campo"><label for="set-g${i}">Golpe ${i + 1}</label><input id="set-g${i}" data-set="1" list="dl-golpes" autocomplete="off" placeholder="Ex.: thunderbolt"></div>`).join("")}</div>
+    <h4>${f.sistema === "sp" ? "Stat Points (0–32 por atributo, máx. 66 no total)" : "EVs (0–252 por atributo, máx. 510 no total)"}</h4>
+    <div class="chips-linha">${Object.keys(PRESETS).map((r) => `<button type="button" class="chip mini-btn" data-preset="${esc(r)}">${esc(r)}</button>`).join("")}<button type="button" class="chip mini-btn" data-preset="zerar">Zerar</button></div>
+    <div class="grade-stats">${STAT_ORDEM.map((k) => `<div><label for="set-ev-${k}">${STAT_ROT[k]}</label><input id="set-ev-${k}" data-set="1" type="number" min="0" max="${max}" inputmode="numeric"></div>`).join("")}</div>
+    <p id="set-total" role="status"></p>
+    ${f.sistema === "ev" ? `<h4>IVs (0–31)</h4><div class="grade-stats">${STAT_ORDEM.map((k) => `<div><label for="set-iv-${k}">${STAT_ROT[k]}</label><input id="set-iv-${k}" data-set="1" type="number" min="0" max="31" inputmode="numeric"></div>`).join("")}</div>` : '<p class="nota">No Pokémon Champions os IVs são fixos em 31 (não editáveis).</p>'}
+    <h4>Atributos finais (Nv. ${f.nivel})</h4><div id="set-stats"></div>
+    <h4>Resumo acessível do set</h4><p id="set-resumo" class="resumo-set" aria-live="polite"></p>
+    <div class="linha"><button type="button" class="chip destaque" data-set-salvar="1">Salvar set</button><button type="button" class="chip" data-set-limpar="1">Limpar set</button><button type="button" class="chip" data-fechar="1">Cancelar</button></div></div>`;
+  $("set-hab").value = s.habilidade; $("set-nat").value = s.natureza || ""; $("set-item").value = s.item || ""; if ($("set-tera")) $("set-tera").value = s.tera || "";
+  [0, 1, 2, 3].forEach((i) => { $("set-g" + i).value = s.golpes[i] || ""; });
+  STAT_ORDEM.forEach((k) => { $("set-ev-" + k).value = (s.evs || {})[k] || 0; if ($("set-iv-" + k)) $("set-iv-" + k).value = (s.ivs || {})[k] != null ? s.ivs[k] : 31; });
+  atualizarSetForm();
+}
+
+/* --- janela da avaliação --- */
+async function detAval(id) {
+  const e = equipes.find((x) => x.id === id); if (!e) throw new Error("Equipe não encontrada.");
+  if (!e.aval || e.aval.sig !== sigEquipe(e)) { await avaliarEquipe(e); gravarEquipes(); desenharEquipes(); }
+  const a = e.aval, f = META[e.formato || "singles"];
+  const rot = { composicao: ["Composição", 15], defesa: ["Defesa de tipos", 20], cobertura: ["Cobertura ofensiva", 15], papeis: ["Papéis e funcionamento", 20], sets: ["Itens e sets", 15], ameacas: ["Resposta ao meta", 15] };
+  const cor = { estrategia: "#7c3aed", itens: "#eab308", cobertura: "#3b82f6", funcionamento: "#22c55e", quebra: "#ef4444" };
+  const tit = { estrategia: "Estratégia predominante", itens: "Itens", cobertura: "Coberturas e defesa", funcionamento: "Funcionamento em batalha", quebra: "O que pode quebrar a equipe" };
+  $("detalhe").innerHTML = `<div class="det-corpo">${navBar()}
+    <div class="aval-topo"><span class="nota-badge grande" style="--c:${NOTA_COR[a.nota]}" aria-label="Nota ${a.nota}">${a.nota}</span>
+      <div><h3 style="margin:0">Avaliação — ${esc(e.nome)}</h3><p class="nota" style="margin:.2rem 0">${esc(f.rotulo)} · ${a.pontos}/100</p>
+      <strong>${esc(a.estNome || "Estratégia indefinida")}${a.pct ? " (" + a.pct + "%)" : ""}</strong></div></div>
+    ${a.fb.map((l) => `<div class="fb" style="--c:${cor[l.t]}"><b>${tit[l.t]}</b>${esc(l.txt)}</div>`).join("")}
+    ${a.subs.length ? `<h4>Pokémon que podem substituir (mesma função ou melhor no meta)</h4>${a.subs.map((s) => `<div class="sub-item"><b>No lugar de ${esc(bonito(s.membro))}</b> (${esc(s.papel)}):
+      <div class="chips-linha">${s.sugestoes.map((c) => { const q = acharPoke(c.n); return `<button type="button" class="chip mini-btn" ${q ? `data-det="${q.id}"` : ""} title="${esc(c.motivo)}">${esc(bonito(c.n))}${c.pos ? " · #" + c.pos + " no uso" : ""}</button>`; }).join("")}</div>
+      ${s.sugestoes.map((c) => `<small>• ${esc(bonito(c.n))}: ${esc(c.motivo)}${c.resiste ? " Resiste a " + esc((TIPOS[c.alvo] || {}).pt || c.alvo) + ", a maior fraqueza da equipe." : ""}</small>`).join("<br>")}</div>`).join("")}` : ""}
+    <h4>Pontuação por critério</h4>
+    ${Object.entries(rot).map(([k, [r, mx]]) => `<div class="crit"><span>${r}</span><strong>${a.notas[k]}/${mx}</strong><div class="trilho"><div class="preench" style="width:${100 * a.notas[k] / mx}%;--cor:${NOTA_COR[a.nota]}"></div></div></div>`).join("")}
+    <p class="nota">Avaliação automática e estrutural (tipos, coberturas, papéis, sets e meta de ${esc(f.atualizado)}). Não simula batalhas: use como guia, não como regra. O ranking mostra Pokémon que encaixam, mas você pode escolher qualquer Pokémon conforme o contexto.</p>
+    <div class="linha"><button type="button" class="chip destaque" data-reavaliar="${esc(e.id)}">Reavaliar</button><button type="button" class="chip" data-fechar="1">Fechar</button></div></div>`;
+}
+
 /* ---------- PDF: exportar / importar (sem bibliotecas) ---------- */
-const pdfTxt = (s) => String(s).replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, "-").replace(/\u2026/g, "...")
+const pdfTxt = (s) => String(s).replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, "-").replace(/\u2026/g, "...").replace(/\u2212/g, "-")
   .replace(/[^\x20-\x7e\xa0-\xff]/g, "?").replace(/[\\()]/g, "\\$&").replace(/[\x80-\xff]/g, (c) => "\\" + c.charCodeAt(0).toString(8).padStart(3, "0"));
 const bytesParaB64 = (bytes) => { let b = ""; bytes.forEach((x) => { b += String.fromCharCode(x); }); return btoa(b); };
+const compactarEquipe = (e) => ({ n: e.nome, f: e.formato === "duplas" ? "d" : "s", m: e.membros.map((m) => {
+  const o = { i: m.id, n: m.nome };
+  if (m.set) o.s = { h: m.set.habilidade, a: m.set.natureza, i: m.set.item, t: m.set.tera, g: m.set.golpes, v: STAT_ORDEM.map((k) => (m.set.ivs || {})[k] ?? 31), e: STAT_ORDEM.map((k) => (m.set.evs || {})[k] || 0) };
+  return o;
+}) });
+const expandirEquipe = (q) => ({ nome: String(q.n || "Equipe"), formato: q.f === "d" ? "duplas" : "singles", membros: (q.m || []).map((o) => {
+  const m = { id: o.i, nome: o.n };
+  if (o.s) {
+    const sp = q.f === "d", mx = sp ? 32 : 252, lim = (v, t) => Math.max(0, Math.min(t, parseInt(v, 10) || 0));
+    m.set = { habilidade: slug(o.s.h), natureza: NATUREZAS[o.s.a] ? o.s.a : "", item: slug(o.s.i), tera: TIPOS[o.s.t] ? o.s.t : "", golpes: [0, 1, 2, 3].map((x) => slug((o.s.g || [])[x])),
+      ivs: Object.fromEntries(STAT_ORDEM.map((k, j) => [k, o.s.v ? lim(o.s.v[j], 31) : 31])), evs: Object.fromEntries(STAT_ORDEM.map((k, j) => [k, o.s.e ? lim(o.s.e[j], mx) : 0])) };
+  }
+  return m;
+}) });
 
 function criarPdf(eqs, favs, nomeUsuario) {
   const paginas = []; let ops, y;
@@ -537,11 +775,13 @@ function criarPdf(eqs, favs, nomeUsuario) {
   texto(36, y, 13, `Equipes (${eqs.length})`, "F2"); y -= 18;
   const cores = ["#2563eb", "#ec4899", "#f97316", "#22c55e", "#7c3aed", "#14b8a6", "#ef4444", "#eab308"];
   eqs.forEach((e, i) => {
-    precisa(86);
+    precisa(100);
+    const a = e.aval;
     faixa(36, y - 16, 523, 20, cores[i % cores.length]);
     texto(44, y - 10, 11, `${i + 1}. ${e.nome}`, "F2", "#ffffff");
+    texto(300, y - 10, 9, `${FORMATOS[e.formato || "singles"]}${a ? " - Nota " + a.nota + " (" + a.pontos + ") - " + (a.estNome || "sem estrategia") : ""}`, "F1", "#ffffff");
     y -= 34;
-    e.membros.forEach((m, k) => texto(k < 3 ? 48 : 300, y - (k % 3) * 14, 10, `${k + 1}. ${bonito(m.nome)} (#${m.id})`));
+    e.membros.forEach((m, k) => texto(k < 3 ? 48 : 300, y - (k % 3) * 14, 9, `${k + 1}. ${bonito(m.nome)}${m.set && m.set.item ? " @ " + bonito(m.set.item) : ""}`));
     y -= 52;
   });
   if (!eqs.length) { texto(48, y, 10, "Nenhuma equipe salva.", "F1", "#6b7280"); y -= 20; }
@@ -551,8 +791,8 @@ function criarPdf(eqs, favs, nomeUsuario) {
   (nomesFav.match(/.{1,95}(\s|$)/g) || [nomesFav]).forEach((ln) => { precisa(14); texto(48, y, 10, ln.trim()); y -= 13; });
   nova();
   texto(36, y, 11, "Dados para importação (não edite)", "F2"); y -= 14;
-  texto(36, y, 8, "Este bloco permite importar este PDF de volta na Pokédex Pessoal.", "F1", "#6b7280"); y -= 14;
-  const json = JSON.stringify({ v: 1, equipes: eqs.map((e) => ({ nome: e.nome, membros: e.membros.map((m) => ({ id: m.id, nome: m.nome })) })), favoritos: favs });
+  texto(36, y, 8, "Este bloco permite importar este PDF de volta na Pokédex Pessoal (equipes, sets e favoritos).", "F1", "#6b7280"); y -= 14;
+  const json = JSON.stringify({ v: 2, equipes: eqs.map(compactarEquipe), favoritos: favs });
   const b64 = bytesParaB64(new TextEncoder().encode(json));
   (b64.match(/.{1,100}/g) || []).forEach((ln) => { precisa(8); texto(36, y, 5, "PKDX1:" + ln, "F3", "#6b7280"); y -= 6.5; });
 
@@ -583,8 +823,10 @@ function lerPayloadPdf(bytes) {
   if (!partes.length) throw new Error("Este PDF não foi gerado por esta Pokédex (sem dados de importação).");
   const bin = atob(partes.join(""));
   const dados = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
-  if (!dados || dados.v !== 1 || !Array.isArray(dados.equipes)) throw new Error("Dados de importação inválidos.");
-  return dados;
+  if (!dados || !Array.isArray(dados.equipes) || (dados.v !== 1 && dados.v !== 2)) throw new Error("Dados de importação inválidos.");
+  const equipesLidas = dados.v === 2 ? dados.equipes.map(expandirEquipe)
+    : dados.equipes.map((q) => ({ nome: q.nome, formato: "singles", membros: (q.membros || []).map((m) => ({ id: m.id, nome: m.nome })) }));
+  return { equipes: equipesLidas, favoritos: dados.favoritos || [] };
 }
 $("eq-exportar").addEventListener("click", () => {
   const bytes = criarPdf(equipes, [...favoritos], usuario && usuario.nome);
@@ -603,13 +845,12 @@ $("eq-arquivo").addEventListener("change", async (e) => {
     let n = 0;
     for (const q of dados.equipes) {
       if (equipes.length >= MAX_EQUIPES) break;
-      if (!q || typeof q.nome !== "string" || !Array.isArray(q.membros)) continue;
-      const membros = q.membros.filter((m) => m && Number.isInteger(m.id) && typeof m.nome === "string").slice(0, MAX_EQUIPE).map((m) => ({ id: m.id, nome: m.nome }));
-      if (membros.length) { equipes.push({ id: novoId(), nome: q.nome.slice(0, 30), membros }); n++; }
+      const membros = q.membros.filter((m) => m && Number.isInteger(m.id) && typeof m.nome === "string").slice(0, MAX_EQUIPE);
+      if (membros.length) { equipes.push({ id: novoId(), nome: q.nome.slice(0, 30), formato: q.formato, membros, criada: Date.now() }); n++; }
     }
-    (dados.favoritos || []).filter(Number.isInteger).forEach((id) => favoritos.add(id));
-    gravar("equipes:" + usuario.sub, equipes); gravar("favoritos:" + usuario.sub, [...favoritos]);
-    desenharEquipes(); desenharGrade(); aviso(`${n} equipe(s) importada(s) do PDF.`);
+    dados.favoritos.filter(Number.isInteger).forEach((id) => favoritos.add(id));
+    gravarEquipes(); gravar("favoritos:" + usuario.sub, [...favoritos]);
+    desenharEquipes(); desenharGrade(); aviso(`${n} equipe(s) importada(s) do PDF. Use "Avaliar todas" para gerar as notas.`);
   } catch (err) { aviso(err.message || "Não foi possível importar este PDF."); }
 });
 
@@ -623,7 +864,7 @@ function abrir(tipo, ref, empurrar) {
   const dlg = $("detalhe");
   if (!dlg.open) dlg.showModal();
   dlg.innerHTML = `<div class="det-corpo">${navBar()}<p>Carregando…</p></div>`;
-  return ({ poke: detPoke, golpe: detGolpe, item: detItem, hab: detHab })[tipo](ref)
+  return ({ poke: detPoke, golpe: detGolpe, item: detItem, hab: detHab, set: detSet, aval: detAval })[tipo](ref)
     .then(() => dlg.insertAdjacentHTML("afterbegin", XBTN))
     .catch((e) => { dlg.innerHTML = XBTN + `<div class="det-corpo">${navBar()}<p class="erro">${esc(e.message)}</p>${fechaBtn}</div>`; });
 }
@@ -877,6 +1118,17 @@ $("detalhe").addEventListener("click", async (e) => {
   const h = e.target.closest("[data-hab]"); if (h) return abrir("hab", h.dataset.hab);
   const m = e.target.closest("[data-metodo]"); if (m && golpesEst) { golpesEst.metodo = m.dataset.metodo; return desenharGolpes(); }
   const a = e.target.closest("[data-add]"); if (a) return addPorId(Number(a.dataset.add), a);
+  const pr = e.target.closest("[data-preset]");
+  if (pr && setEdit) { const v = pr.dataset.preset === "zerar" ? {} : PRESETS[pr.dataset.preset]; STAT_ORDEM.forEach((k) => { const ev = v[k] || 0; $("set-ev-" + k).value = setEdit.f.sistema === "sp" ? evParaSp(ev) : ev; }); return atualizarSetForm(); }
+  const ir = e.target.closest("[data-item-rapido]"); if (ir && setEdit) { $("set-item").value = ir.dataset.itemRapido; return atualizarSetForm(); }
+  if (e.target.closest("[data-set-salvar]") && setEdit) {
+    const s = lerSet(), lim = setEdit.f.sistema === "sp" ? 66 : 510;
+    if (totalPts(s) > lim) { $("set-total").focus && $("set-total").scrollIntoView({ block: "center" }); return aviso("Reduza os EVs/pontos: passou do limite."); }
+    rascunho.membros[setEdit.idx].set = s; dlg.close(); desenharEditor(); return aviso("Set salvo.");
+  }
+  if (e.target.closest("[data-set-limpar]") && setEdit) { delete rascunho.membros[setEdit.idx].set; const i = setEdit.idx; desenharEditor(); return abrir("set", i, false); }
+  const rv = e.target.closest("[data-reavaliar]");
+  if (rv) { const t = equipes.find((x) => x.id === rv.dataset.reavaliar); if (t) { delete t.aval; return abrir("aval", t.id, false); } }
   const en2 = e.target.closest("[data-enc]");
   if (en2) {
     const box = $("enc-box"); box.innerHTML = "Consultando…";
@@ -888,13 +1140,14 @@ $("detalhe").addEventListener("click", async (e) => {
     } catch (err) { box.innerHTML = `<p class="erro">${esc(err.message)}</p>`; }
   }
 });
-$("detalhe").addEventListener("change", (e) => { if (e.target.id === "sel-vg" && golpesEst) { golpesEst.vg = e.target.value; desenharGolpes(); } });
+$("detalhe").addEventListener("change", (e) => { if (e.target.id === "sel-vg" && golpesEst) { golpesEst.vg = e.target.value; desenharGolpes(); } if (e.target.dataset && e.target.dataset.set !== undefined) atualizarSetForm(); });
 $("detalhe").addEventListener("input", (e) => {
+  if (e.target.dataset && e.target.dataset.set !== undefined) return atualizarSetForm();
   if (!e.target.classList || !e.target.classList.contains("filtro-lista")) return;
   const t = e.target.value.trim().toLowerCase().replace(/\s+/g, "-");
   e.target.nextElementSibling.querySelectorAll("[data-nome]").forEach((b) => { b.hidden = !!t && !b.dataset.nome.includes(t); });
 });
-$("detalhe").addEventListener("close", () => { nav.length = 0; });
+$("detalhe").addEventListener("close", () => { nav.length = 0; setEdit = null; });
 
 document.querySelectorAll("[data-aba]").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll("[data-aba]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
