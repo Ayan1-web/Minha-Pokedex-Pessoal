@@ -1,6 +1,6 @@
 {
   "name": "guia-login-google",
-  "version": "4.0.0",
+  "version": "6.0.0",
   "private": true,
   "type": "module",
   "description": "Login com Google (GIS) + Pokédex pessoal com equipes, protegida por sessão",
