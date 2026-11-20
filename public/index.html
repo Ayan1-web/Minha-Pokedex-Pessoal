@@ -60,31 +60,60 @@
         <div id="aba-pokedex">
           <section class="painel" aria-label="Montar equipe">
             <h2>Montar equipe</h2>
-            <div class="linha">
-              <input id="eq-nome" type="text" maxlength="30" placeholder="Nome da equipe (ex.: Equipe 1)" aria-label="Nome da equipe">
-              <button id="eq-salvar" type="button" class="chip destaque">Salvar equipe</button>
-              <button id="eq-nova" type="button" class="chip">Nova equipe</button>
+            <div class="campos">
+              <div class="campo"><label for="eq-nome">Nome da equipe</label><input id="eq-nome" type="text" maxlength="30" placeholder="Ex.: Equipe 1"></div>
+              <div class="campo"><label for="eq-formato">Formato</label>
+                <select id="eq-formato"><option value="singles">Singles — Smogon OU (EVs e IVs)</option><option value="duplas">Duplas — VGC Champions (Stat Points)</option></select></div>
             </div>
-            <div class="busca-eq">
-              <input id="eq-busca" type="search" autocomplete="off" placeholder="Buscar Pokémon para a equipe (ex.: pikachu, rotom-heat, charizard-mega-x)" aria-label="Buscar Pokémon para a equipe">
+            <div class="campo busca-eq">
+              <label for="eq-busca">Adicionar Pokémon à equipe</label>
+              <input id="eq-busca" type="search" autocomplete="off" placeholder="Ex.: pikachu">
               <div id="eq-sugestoes" class="sugestoes" hidden></div>
             </div>
             <div id="eq-slots" class="slots" aria-label="Slots da equipe"></div>
             <p id="eq-msg" class="msg" role="status"></p>
-            <h3>Equipes salvas <small id="eq-qtd"></small></h3>
+            <div class="linha">
+              <button id="eq-salvar" type="button" class="chip destaque">Salvar equipe</button>
+              <button id="eq-nova" type="button" class="chip">Nova equipe</button>
+            </div>
+            <p class="nota">Em cada Pokémon, use <b>⚙ Set</b> para definir item, habilidade, natureza, golpes, IVs e EVs. Ao salvar, a equipe recebe uma nota de S a F em "Equipes salvas".</p>
+          </section>
+
+          <section class="painel" id="painel-equipes" aria-label="Equipes salvas">
+            <div class="cab-painel">
+              <h2>Equipes salvas <small id="eq-qtd"></small></h2>
+              <div class="linha">
+                <label class="inline" for="eq-ordem">Ordenar por</label>
+                <select id="eq-ordem"><option value="nota">Melhor nota</option><option value="nome">Nome</option><option value="recente">Mais recentes</option></select>
+                <button id="eq-avaliar-todas" type="button" class="chip mini-btn">Avaliar todas</button>
+              </div>
+            </div>
             <div id="eq-lista" class="eq-lista"></div>
             <div class="linha">
               <button id="eq-exportar" type="button" class="chip">📄 Exportar PDF</button>
               <button id="eq-importar" type="button" class="chip">📥 Importar PDF</button>
               <input id="eq-arquivo" type="file" accept="application/pdf,.pdf" hidden>
             </div>
-            <p class="nota">O PDF guarda suas equipes e favoritos (legível para você e importável aqui). Não edite o PDF antes de importar.</p>
+            <p class="nota">Aqui você edita, duplica e exclui equipes. O PDF guarda equipes, sets e favoritos (importável aqui); não edite o PDF antes de importar.</p>
+          </section>
+
+          <section class="painel" id="painel-meta" aria-label="Meta competitivo">
+            <h2>Meta competitivo</h2>
+            <div class="campos">
+              <div class="campo"><label for="meta-formato">Formato do meta</label>
+                <select id="meta-formato"><option value="singles">Singles — Smogon Gen 9 OU</option><option value="duplas">Duplas — VGC Pokémon Champions (Reg. M-C)</option></select></div>
+            </div>
+            <p class="dica" id="meta-fonte"></p>
+            <p id="meta-user" class="msg"></p>
+            <div id="meta-lista" class="meta-lista"></div>
+            <p class="nota"><b>Como ler:</b> a "presença" é uma <b>estimativa</b> feita a partir do uso dos Pokémon associados a cada estratégia (não é estatística oficial de arquétipos). O ranking de Pokémon mostra quem <b>costuma encaixar</b>, mas você pode escolher <b>qualquer Pokémon</b>, conforme a situação, o contexto de batalha e o que sua equipe precisa.</p>
           </section>
 
           <section class="filtros-painel" aria-label="Filtros">
             <div id="barra-tipos" class="barra-tipos" role="group" aria-label="Filtrar por tipo (até 2)"></div>
+            <div class="campo"><label for="busca">Buscar Pokémon</label><input id="busca" type="search" placeholder="Nome ou número"></div>
             <div class="filtros">
-              <input id="busca" type="search" placeholder="Buscar por nome ou número…" aria-label="Buscar Pokémon">
+              <select id="filtro-estrategia" aria-label="Estratégia do meta"><option value="">Estratégia: todas</option></select>
               <select id="filtro-forma" aria-label="Variações">
                 <option value="base">Espécies base</option>
                 <option value="mega">Mega Evoluções / Primal</option>
@@ -93,11 +122,11 @@
                 <option value="outra">Formas alternativas (Rotom, Deoxys…)</option>
                 <option value="todas">Todas as formas</option>
               </select>
-              <select id="filtro-geracao" aria-label="Geração"><option value="">Todas as gerações</option></select>
-              <select id="filtro-cor" aria-label="Cor"><option value="">Todas as cores</option></select>
-              <select id="filtro-habitat" aria-label="Habitat"><option value="">Todos os habitats</option></select>
-              <select id="filtro-ovo" aria-label="Grupo de ovos"><option value="">Todos os grupos de ovos</option></select>
-              <select id="filtro-formato" aria-label="Formato do corpo"><option value="">Todos os formatos</option></select>
+              <select id="filtro-geracao" aria-label="Geração"><option value="">Geração: todas</option></select>
+              <select id="filtro-cor" aria-label="Cor"><option value="">Cor: todas</option></select>
+              <select id="filtro-habitat" aria-label="Habitat"><option value="">Habitat: todos</option></select>
+              <select id="filtro-ovo" aria-label="Grupo de ovos"><option value="">Ovos: todos</option></select>
+              <select id="filtro-formato" aria-label="Formato do corpo"><option value="">Formato: todos</option></select>
               <select id="filtro-ordem" aria-label="Ordenar">
                 <option value="num">Ordem: número ↑</option><option value="num-desc">Ordem: número ↓</option>
                 <option value="nome">Ordem: nome A–Z</option><option value="nome-desc">Ordem: nome Z–A</option>
@@ -106,6 +135,7 @@
               <button id="limpar" type="button" class="chip">✕ Limpar filtros</button>
             </div>
           </section>
+          <div id="faixa-estrategia" class="faixa" hidden></div>
           <section id="grade" class="grade" aria-live="polite"></section>
           <p id="vazio" class="vazio" hidden>Nenhum Pokémon encontrado.</p>
           <nav class="paginas" aria-label="Páginas">
@@ -122,9 +152,9 @@
             <p class="dica">Todos os itens da PokéAPI mais os 35 Z-Crystals. Clique em um item para ver a definição, como funciona, preço, atributos e quem o carrega.</p>
             <div id="itens-rapidos" class="linha rapidos"></div>
             <div class="filtros">
-              <input id="busca-i" type="search" placeholder="Buscar item por nome (em inglês)…" aria-label="Buscar item">
-              <select id="filtro-cat-item" aria-label="Categoria"><option value="">Todas as categorias</option></select>
-              <select id="filtro-atrib-item" aria-label="Atributo"><option value="">Todos os atributos</option></select>
+              <div class="campo"><label for="busca-i">Buscar item (nome em inglês)</label><input id="busca-i" type="search" placeholder="Ex.: leftovers"></div>
+              <select id="filtro-cat-item" aria-label="Categoria"><option value="">Categoria: todas</option></select>
+              <select id="filtro-atrib-item" aria-label="Atributo"><option value="">Atributo: todos</option></select>
             </div>
           </section>
           <section id="grade-i" class="grade pequena"></section>
@@ -138,11 +168,11 @@
             <p class="dica">Clique em um golpe para ver a ficha completa, a leitura competitiva e a lista de todos os Pokémon que o aprendem.</p>
             <div id="barra-tipos-g" class="barra-tipos" role="group" aria-label="Filtrar golpes por tipo"></div>
             <div class="filtros">
-              <input id="busca-g" type="search" placeholder="Buscar golpe por nome (em inglês)…" aria-label="Buscar golpe">
+              <div class="campo"><label for="busca-g">Buscar golpe (nome em inglês)</label><input id="busca-g" type="search" placeholder="Ex.: thunderbolt"></div>
               <select id="filtro-classe-g" aria-label="Classe">
-                <option value="">Todas as classes</option><option value="physical">Físico</option><option value="special">Especial</option><option value="status">Status</option>
+                <option value="">Classe: todas</option><option value="physical">Físico</option><option value="special">Especial</option><option value="status">Status</option>
               </select>
-              <select id="filtro-geracao-g" aria-label="Geração do golpe"><option value="">Todas as gerações</option></select>
+              <select id="filtro-geracao-g" aria-label="Geração do golpe"><option value="">Geração: todas</option></select>
             </div>
           </section>
           <section id="grade-g" class="grade pequena"></section>
@@ -191,6 +221,14 @@
               <li><b>Gigantamax:</b> exclusivo de Sword/Shield (Gen 8); forma só de batalha.</li>
               <li><b>Terastalização:</b> exclusiva de Scarlet/Violet (Gen 9).</li>
             </ul>
+            <h2>Equipes, sets e nota (S a F)</h2>
+            <ul>
+              <li><b>Singles (Smogon OU):</b> nível 100, EVs até 252 por atributo e 510 no total, IVs de 0 a 31 e Tera Type.</li>
+              <li><b>Duplas (Pokémon Champions, VGC):</b> nível 50, Stat Points até 32 por atributo e 66 no total, IVs fixos em 31 e sem Tera (a Mega Evolução ocupa esse papel), segundo guias consultados em nov/2026. Ao trocar o formato, os EVs do set viram Stat Points.</li>
+              <li><b>Nota:</b> soma 100 pontos — Composição 15, Defesa de tipos 20, Cobertura ofensiva 15, Papéis e funcionamento 20, Itens e sets 15, Resposta ao meta 15. S ≥ 93, A ≥ 83, B ≥ 72, C ≥ 60, D ≥ 48, F abaixo disso.</li>
+              <li><b>Sem sets</b> a nota fica limitada, porque não dá para avaliar golpes, itens e papéis. Defina os sets para uma avaliação completa.</li>
+              <li><b>Limites:</b> a avaliação é estrutural e automática (tipos, coberturas, papéis, itens e Pokémon do meta). Ela não simula batalhas e não substitui teste em partidas.</li>
+            </ul>
             <h2>No celular</h2>
             <ul>
               <li>Abra o site no <b>Chrome (Android)</b> ou <b>Safari (iPhone)</b>, não dentro do navegador interno de apps como Instagram/WhatsApp (o Google bloqueia o login nesses navegadores).</li>
@@ -207,6 +245,7 @@
 
   <dialog id="detalhe" class="detalhe"></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
+  <script src="/meta.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
